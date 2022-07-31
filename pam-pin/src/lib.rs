@@ -16,17 +16,25 @@ macro_rules! err_try {
     };
 }
 
-fn convert_err(error: &dyn Display, flags: &PamFlags) -> PamError {
-    if !flags.contains(PamFlags::SILENT) {
-        println!("Error: {}", error);
+trait ToPamError<T> {
+    fn pam_err(self, flags: &PamFlags) -> Result<T, PamError>;
+}
+
+impl<T, E: Display> ToPamError<T> for Result<T, E> {
+    fn pam_err(self, flags: &PamFlags) -> Result<T, PamError> {
+        self.map_err(|error| {
+            if !flags.contains(PamFlags::SILENT) {
+                println!("Error: {}", error);
+            }
+            PamError::AUTH_ERR
+        })
     }
-    PamError::AUTH_ERR
 }
 
 struct PamPin;
 
 impl PamPin {
-    fn get_pin(pamh: &Pam) -> PamResult<&CStr> {
+    fn get_user_pin(pamh: &Pam) -> PamResult<&CStr> {
         pamh.get_authtok(Some("Pin: "))?
             .ok_or(PamError::AUTHTOK_RECOVERY_ERR)
     }
@@ -40,18 +48,19 @@ impl PamPin {
     fn auth(pamh: Pam, flags: PamFlags, _args: Vec<String>) -> Result<(), PamError> {
         let user_name = pamh
             .get_user(None)?
-            .ok_or_else(|| convert_err(&"No username", &flags))?
+            .ok_or("No username")
+            .pam_err(&flags)?
             .to_str()
-            .map_err(|e| convert_err(&e, &flags))?;
-        let users_data = pin_data::Data::from_file(&"/etc/security/pins.toml")
-            .map_err(|e| convert_err(&e, &flags))?;
+            .pam_err(&flags)?;
+        let users_data = pin_data::Data::from_file(&"/etc/security/pins.toml").pam_err(&flags)?;
         let user = users_data
             .get_by_name(user_name)
-            .ok_or_else(|| convert_err(&"No user in database", &flags))?;
+            .ok_or("No user in database")
+            .pam_err(&flags)?;
 
-        let pin = Self::get_pin(&pamh)?;
+        let pin = Self::get_user_pin(&pamh)?;
 
-        Self::verify_pin(user.pin_hash(), pin.to_bytes()).map_err(|e| convert_err(&e, &flags))?;
+        Self::verify_pin(user.pin_hash(), pin.to_bytes()).pam_err(&flags)?;
         Ok(())
     }
 }
