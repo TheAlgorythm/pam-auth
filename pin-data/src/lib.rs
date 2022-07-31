@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
-use toml;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct User {
@@ -27,18 +26,17 @@ impl User {
         let data = Data {
             users: vec![self.clone()],
         };
+        let data = toml::to_string(&data)?;
 
-        let file = File::options().append(true).create(true).open(path)?;
+        let mut file = File::options().append(true).create(true).open(path)?;
 
         let is_created = file.metadata()?.len() == 0;
 
-        let mut file = BufWriter::new(file);
-
-        if !is_created {
-            file.write(b"\n")?;
+        if is_created {
+            file.write_all(data.as_bytes())?;
+        } else {
+            write!(file, "\n{}", data)?;
         }
-        file.write(toml::to_string(&data)?.as_bytes())?;
-
         file.flush()?;
 
         Ok(())
