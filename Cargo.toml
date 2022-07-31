@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+  "pam-pin",
+  "pin-gen",
+  "pin-data",
+]
