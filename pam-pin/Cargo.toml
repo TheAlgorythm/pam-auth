@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 pin-data = { path = "../pin-data" }
-argon2 = { version = "0.4.1", features = ["std"] }
+argon2 = { version = "0.4.1", features = ["std", "parallel"] }
 pamsm = { version = "0.5.2", features = ["libpam"] }
 
 [lib]

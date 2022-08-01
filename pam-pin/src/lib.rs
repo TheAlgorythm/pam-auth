@@ -73,3 +73,32 @@ impl PamServiceModule for PamPin {
 }
 
 pam_module!(PamPin);
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn verify_valid_pin() {
+        let pin = "pw";
+        let hash = "$argon2d$v=19$m=4096,t=3,p=1$PFRID+hbQKjEFESZWQZMEA$mMpICfZn5N0bV13RJ3nWYfYXesgTJcPl81xwrqzDDLY";
+
+        PamPin::verify_pin(hash, pin.as_bytes()).unwrap();
+    }
+
+    #[test]
+    fn not_verify_invalid_hash() {
+        let pin = "pw";
+        let hash = "foo";
+
+        PamPin::verify_pin(hash, pin.as_bytes()).unwrap_err();
+    }
+
+    #[test]
+    fn not_verify_invalid_pin() {
+        let pin = "Pw";
+        let hash = "$argon2d$v=19$m=4096,t=3,p=1$PFRID+hbQKjEFESZWQZMEA$mMpICfZn5N0bV13RJ3nWYfYXesgTJcPl81xwrqzDDLY";
+
+        PamPin::verify_pin(hash, pin.as_bytes()).unwrap_err();
+    }
+}
