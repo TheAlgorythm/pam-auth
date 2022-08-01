@@ -6,6 +6,7 @@ use pamsm::{Pam, PamError, PamFlags, PamLibExt, PamResult, PamServiceModule};
 use password_hash::PasswordHash;
 use std::ffi::CStr;
 use std::fmt::Display;
+use std::path::PathBuf;
 
 macro_rules! err_try {
     ($res:expr) => {
@@ -17,17 +18,47 @@ macro_rules! err_try {
 }
 
 trait ToPamError<T> {
-    fn pam_err(self, flags: &PamFlags) -> Result<T, PamError>;
+    fn pam_err(self, flags: &PamFlags) -> Result<T, PamError>
+    where
+        Self: Sized,
+    {
+        self.pam_custom_err(PamError::AUTH_ERR, flags)
+    }
+    fn pam_custom_err(self, custom_error: PamError, flags: &PamFlags) -> Result<T, PamError>;
 }
 
 impl<T, E: Display> ToPamError<T> for Result<T, E> {
-    fn pam_err(self, flags: &PamFlags) -> Result<T, PamError> {
+    fn pam_custom_err(self, custom_error: PamError, flags: &PamFlags) -> Result<T, PamError> {
         self.map_err(|error| {
             if !flags.contains(PamFlags::SILENT) {
                 println!("Error: {}", error);
             }
-            PamError::AUTH_ERR
+            custom_error
         })
+    }
+}
+
+struct Args {
+    pub database_filepath: PathBuf,
+}
+
+impl Args {
+    const DATABASE_FILEPATH_ID: &'static str = "db=";
+    const DATABASE_MISSING: &'static str = "There is no `db=/<file>` given.";
+}
+
+impl TryFrom<Vec<String>> for Args {
+    type Error = &'static str;
+
+    fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
+        let database_filepath = value
+            .iter()
+            .find(|arg| arg.starts_with(Self::DATABASE_FILEPATH_ID))
+            .ok_or(Self::DATABASE_MISSING)?
+            .trim_start_matches(Self::DATABASE_FILEPATH_ID)
+            .into();
+
+        Ok(Self { database_filepath })
     }
 }
 
@@ -45,14 +76,16 @@ impl PamPin {
         hash.verify_password(&[&Argon2::default()], pin)
     }
 
-    fn auth(pamh: Pam, flags: PamFlags, _args: Vec<String>) -> Result<(), PamError> {
+    fn auth(pamh: Pam, flags: PamFlags, args: Vec<String>) -> Result<(), PamError> {
+        let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
+
         let user_name = pamh
             .get_user(None)?
             .ok_or("No username")
             .pam_err(&flags)?
             .to_str()
             .pam_err(&flags)?;
-        let users_data = pin_data::Data::from_file(&"/etc/security/pins.toml").pam_err(&flags)?;
+        let users_data = pin_data::Data::from_file(&args.database_filepath).pam_err(&flags)?;
         let user = users_data
             .get_by_name(user_name)
             .ok_or("No user in database")

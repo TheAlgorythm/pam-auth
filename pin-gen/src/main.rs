@@ -44,5 +44,5 @@ fn main() {
 
     let user = User::new(args.username, hash);
 
-    eprint_try!(user.append_to_file(&args.database_file));
+    eprint_try!(user.append_to_file(&args.database_filepath));
 }

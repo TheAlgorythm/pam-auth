@@ -5,7 +5,7 @@ use std::path::PathBuf;
 #[clap(author, version, about)]
 pub struct CliArgs {
     #[clap(short = 'f', long, default_value = "/etc/security/pins.toml")]
-    pub database_file: PathBuf,
+    pub database_filepath: PathBuf,
     #[clap()]
     pub username: String,
     /// For Argon2.

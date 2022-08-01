@@ -55,7 +55,7 @@ impl Data {
     }
 
     pub fn get_by_name<'a>(&'a self, name: &str) -> Option<&'a User> {
-        self.users.iter().find(|user| user.name == name)
+        self.users.iter().rev().find(|user| user.name == name)
     }
 }
 
