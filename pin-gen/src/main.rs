@@ -1,4 +1,7 @@
+mod cli;
+
 use argon2::{password_hash, Algorithm, Argon2, Params, Version};
+use clap::Parser;
 use password_hash::{rand_core::OsRng, PasswordHasher, SaltString};
 use pin_data::User;
 use rpassword::prompt_password;
@@ -16,8 +19,8 @@ macro_rules! eprint_try {
     };
 }
 
-fn hash_pin(pin: String) -> password_hash::errors::Result<String> {
-    let argon2 = Argon2::new(Algorithm::Argon2d, Version::default(), Params::default());
+fn hash_pin(pin: String, argon2_params: Params) -> password_hash::errors::Result<String> {
+    let argon2 = Argon2::new(Algorithm::Argon2d, Version::default(), argon2_params);
 
     let salt = SaltString::generate(&mut OsRng);
 
@@ -27,16 +30,19 @@ fn hash_pin(pin: String) -> password_hash::errors::Result<String> {
 }
 
 fn main() {
+    let args = cli::CliArgs::parse();
+    let argon2_params = eprint_try!(args.argon2_params());
+
     let pin = eprint_try!(prompt_password("Pin: "));
 
     let hashing_starting_time = Instant::now();
-    let hash = eprint_try!(hash_pin(pin));
+    let hash = eprint_try!(hash_pin(pin, argon2_params));
     eprintln!(
         "Needed {}ms for hashing",
         hashing_starting_time.elapsed().as_millis()
     );
 
-    let user = User::new("zschoen", hash);
+    let user = User::new(args.username, hash);
 
-    eprint_try!(user.append_to_file(&"/etc/security/pins.toml"));
+    eprint_try!(user.append_to_file(&args.database_file));
 }
