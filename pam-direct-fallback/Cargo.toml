@@ -1,5 +1,8 @@
 [package]
 name = "pam-direct-fallback"
+authors = ["zSchoen <dev@zschoen.dev>"]
+license = "GPL-3.0-or-later"
+readme = "README.md"
 version = "0.1.0"
 edition = "2021"
 
