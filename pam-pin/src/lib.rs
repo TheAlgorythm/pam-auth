@@ -1,42 +1,14 @@
 #[macro_use]
 extern crate pamsm;
+#[macro_use]
+extern crate pam_utils;
 
 use argon2::{password_hash, Argon2};
+use pam_utils::IntoPamError;
 use pamsm::{Pam, PamError, PamFlags, PamLibExt, PamResult, PamServiceModule};
 use password_hash::PasswordHash;
 use std::ffi::CStr;
-use std::fmt::Display;
 use std::path::PathBuf;
-
-macro_rules! err_try {
-    ($res:expr) => {
-        match $res {
-            Ok(res) => res,
-            Err(e) => return e,
-        }
-    };
-}
-
-trait ToPamError<T> {
-    fn pam_err(self, flags: &PamFlags) -> Result<T, PamError>
-    where
-        Self: Sized,
-    {
-        self.pam_custom_err(PamError::AUTH_ERR, flags)
-    }
-    fn pam_custom_err(self, custom_error: PamError, flags: &PamFlags) -> Result<T, PamError>;
-}
-
-impl<T, E: Display> ToPamError<T> for Result<T, E> {
-    fn pam_custom_err(self, custom_error: PamError, flags: &PamFlags) -> Result<T, PamError> {
-        self.map_err(|error| {
-            if !flags.contains(PamFlags::SILENT) {
-                println!("Error: {}", error);
-            }
-            custom_error
-        })
-    }
-}
 
 struct Args {
     pub database_filepath: PathBuf,
@@ -51,11 +23,8 @@ impl TryFrom<Vec<String>> for Args {
     type Error = &'static str;
 
     fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
-        let database_filepath = value
-            .iter()
-            .find(|arg| arg.starts_with(Self::DATABASE_FILEPATH_ID))
+        let database_filepath = pam_utils::extract_named_value(&value, Self::DATABASE_FILEPATH_ID)
             .ok_or(Self::DATABASE_MISSING)?
-            .trim_start_matches(Self::DATABASE_FILEPATH_ID)
             .into();
 
         Ok(Self { database_filepath })
@@ -66,7 +35,7 @@ struct PamPin;
 
 impl PamPin {
     fn get_user_pin(pamh: &Pam) -> PamResult<&CStr> {
-        pamh.get_authtok(Some("Pin: "))?
+        pamh.conv(Some("Pin: "), pamsm::PamMsgStyle::PROMPT_ECHO_OFF)?
             .ok_or(PamError::AUTHTOK_RECOVERY_ERR)
     }
 
@@ -79,17 +48,11 @@ impl PamPin {
     fn auth(pamh: Pam, flags: PamFlags, args: Vec<String>) -> Result<(), PamError> {
         let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
 
-        let user_name = pamh
-            .get_user(None)?
-            .ok_or("No username")
-            .pam_err(&flags)?
-            .to_str()
-            .pam_err(&flags)?;
+        let user_name = pam_utils::get_username(&pamh, &flags)?;
         let users_data = pin_data::Data::from_file(&args.database_filepath).pam_err(&flags)?;
         let user = users_data
-            .get_by_name(user_name)
-            .ok_or("No user in database")
-            .pam_err(&flags)?;
+            .get_by_name(&user_name)
+            .ok_or(PamError::USER_UNKNOWN)?;
 
         let pin = Self::get_user_pin(&pamh)?;
 

@@ -1,5 +1,5 @@
 [package]
-name = "pam-pin"
+name = "pam-utils"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,9 +7,3 @@ edition = "2021"
 
 [dependencies]
 pamsm = { version = "0.5.2", features = ["libpam"] }
-pam-utils = { path = "../pam-utils" }
-pin-data = { path = "../pin-data" }
-argon2 = { version = "0.4.1", features = ["std", "parallel"] }
-
-[lib]
-crate-type = ["cdylib"]

@@ -28,6 +28,7 @@ impl User {
         };
         let data = toml::to_string(&data)?;
 
+        // TODO set permissions
         let mut file = File::options().append(true).create(true).open(path)?;
 
         let is_created = file.metadata()?.len() == 0;

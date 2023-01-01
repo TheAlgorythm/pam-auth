@@ -1,7 +1,9 @@
 [workspace]
 
 members = [
+  "pam-utils",
   "pam-pin",
   "pin-gen",
   "pin-data",
+  "pam-direct-fallback",
 ]
