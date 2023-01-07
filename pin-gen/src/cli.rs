@@ -7,9 +7,14 @@ pub struct CliArgs {
     #[clap(short = 'f', long, default_value = "/etc/security/pins.toml")]
     pub database_filepath: PathBuf,
     #[clap()]
-    pub username: String,
+    pub username: Option<String>,
+    /// Use this flag to try different parameters.
+    /// It disables the need for a username and pin.
+    #[clap(short, long)]
+    pub benchmark: bool,
     /// For Argon2.
-    /// Try to use at least 16384 KiB.
+    /// Try to use at least 65536 KiB.
+    /// The unit is KiB.
     #[clap(short, long)]
     pub memory_cost: Option<u32>,
     /// For Argon2.
@@ -23,6 +28,12 @@ pub struct CliArgs {
 }
 
 impl CliArgs {
+    pub fn validate(&self) -> Result<(), &str> {
+        (self.benchmark || self.username.is_some())
+            .then_some(())
+            .ok_or("username not specified")
+    }
+
     pub fn argon2_params(&self) -> argon2::Result<argon2::Params> {
         let mut argon2_params = argon2::ParamsBuilder::new();
 

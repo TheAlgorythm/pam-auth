@@ -31,9 +31,15 @@ fn hash_pin(pin: String, argon2_params: Params) -> password_hash::errors::Result
 
 fn main() {
     let args = cli::CliArgs::parse();
+    eprint_try!(args.validate());
+
     let argon2_params = eprint_try!(args.argon2_params());
 
-    let pin = eprint_try!(prompt_password("Pin: "));
+    let pin = if args.benchmark {
+        "Pin".to_string()
+    } else {
+        eprint_try!(prompt_password("Pin: "))
+    };
 
     let hashing_starting_time = Instant::now();
     let hash = eprint_try!(hash_pin(pin, argon2_params));
@@ -42,7 +48,9 @@ fn main() {
         hashing_starting_time.elapsed().as_millis()
     );
 
-    let user = User::new(args.username, hash);
+    if !args.benchmark {
+        let user = User::new(args.username.unwrap(), hash);
 
-    eprint_try!(user.append_to_file(&args.database_filepath));
+        eprint_try!(user.append_to_file(&args.database_filepath));
+    }
 }
