@@ -13,7 +13,7 @@ pub struct CliArgs {
     #[clap(short, long)]
     pub benchmark: bool,
     /// For Argon2.
-    /// Try to use at least 65536 KiB.
+    /// Try to use in the range of 65536 KiB and available memory / 2.
     /// The unit is KiB.
     #[clap(short, long)]
     pub memory_cost: Option<u32>,
