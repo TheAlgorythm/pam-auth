@@ -29,7 +29,15 @@ impl User {
         let data = toml::to_string(&data)?;
 
         // TODO set permissions
-        let mut file = File::options().append(true).create(true).open(path)?;
+        let mut file_options = File::options();
+        file_options.append(true).create(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            file_options.mode(0o600);
+        }
+
+        let mut file = file_options.open(path)?;
 
         let is_created = file.metadata()?.len() == 0;
 
