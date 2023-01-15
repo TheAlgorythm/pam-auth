@@ -74,7 +74,6 @@ impl PushPathComponent for PathBuf {
 
 fn user_file(dir: PathBuf, username: String) -> PathBuf {
     let mut user_data_file = dir;
-    // TODO Prevent dir traversal attack
     let user_file_name = PathComponent::new(username).unwrap();
     user_data_file.push_component(user_file_name);
     user_data_file

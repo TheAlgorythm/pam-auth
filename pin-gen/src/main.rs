@@ -2,7 +2,7 @@ mod cli;
 
 use argon2::{password_hash, Algorithm, Argon2, Params, Version};
 use clap::Parser;
-use password_hash::{rand_core::OsRng, PasswordHasher, SaltString};
+use password_hash::{rand_core::OsRng, PasswordHashString, PasswordHasher, SaltString};
 use pin_data::User;
 use rpassword::prompt_password;
 use std::time::Instant;
@@ -19,14 +19,17 @@ macro_rules! eprint_try {
     };
 }
 
-fn hash_pin(pin: String, argon2_params: Params) -> password_hash::errors::Result<String> {
+fn hash_pin(
+    pin: String,
+    argon2_params: Params,
+) -> password_hash::errors::Result<PasswordHashString> {
     let argon2 = Argon2::new(Algorithm::Argon2d, Version::default(), argon2_params);
 
     let salt = SaltString::generate(&mut OsRng);
 
     argon2
         .hash_password(pin.as_bytes(), &salt)
-        .map(|hash| hash.to_string())
+        .map(|hash| hash.serialize())
 }
 
 fn main() {

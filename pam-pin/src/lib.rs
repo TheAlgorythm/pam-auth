@@ -39,9 +39,7 @@ impl PamPin {
             .ok_or(PamError::AUTHTOK_RECOVERY_ERR)
     }
 
-    fn verify_pin(hash: &str, pin: &[u8]) -> password_hash::errors::Result<()> {
-        let hash = PasswordHash::new(hash)?;
-
+    fn verify_pin(hash: PasswordHash<'_>, pin: &[u8]) -> password_hash::errors::Result<()> {
         hash.verify_password(&[&Argon2::default()], pin)
     }
 
@@ -78,22 +76,22 @@ mod test {
     fn verify_valid_pin() {
         let pin = "pw";
         let hash = "$argon2d$v=19$m=4096,t=3,p=1$PFRID+hbQKjEFESZWQZMEA$mMpICfZn5N0bV13RJ3nWYfYXesgTJcPl81xwrqzDDLY";
+        let hash = PasswordHash::new(hash).unwrap();
 
         PamPin::verify_pin(hash, pin.as_bytes()).unwrap();
     }
 
     #[test]
     fn not_verify_invalid_hash() {
-        let pin = "pw";
         let hash = "foo";
-
-        PamPin::verify_pin(hash, pin.as_bytes()).unwrap_err();
+        PasswordHash::new(hash).unwrap_err();
     }
 
     #[test]
     fn not_verify_invalid_pin() {
         let pin = "Pw";
         let hash = "$argon2d$v=19$m=4096,t=3,p=1$PFRID+hbQKjEFESZWQZMEA$mMpICfZn5N0bV13RJ3nWYfYXesgTJcPl81xwrqzDDLY";
+        let hash = PasswordHash::new(hash).unwrap();
 
         PamPin::verify_pin(hash, pin.as_bytes()).unwrap_err();
     }
