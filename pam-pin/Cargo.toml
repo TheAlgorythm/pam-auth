@@ -13,6 +13,11 @@ pamsm = { version = "0.5.2", features = ["libpam"] }
 pam-utils = { path = "../pam-utils" }
 pin-data = { path = "../pin-data" }
 argon2 = { version = "0.4.1", features = ["std", "parallel"] }
+birdcage = { version = "0.2", optional = true }
+
+[features]
+default = ["sandbox"]
+sandbox = ["dep:birdcage", "pam-utils/sandbox"]
 
 [lib]
 crate-type = ["cdylib"]

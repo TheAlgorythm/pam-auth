@@ -1,39 +1,34 @@
 #[macro_use]
 extern crate pamsm;
-#[macro_use]
-extern crate pam_utils;
+
+mod args;
 
 use argon2::{password_hash, Argon2};
 use pam_utils::IntoPamError;
 use pamsm::{Pam, PamError, PamFlags, PamLibExt, PamResult, PamServiceModule};
 use password_hash::PasswordHash;
 use std::ffi::CStr;
-use std::path::PathBuf;
 
-struct Args {
-    pub database_filepath: PathBuf,
-}
-
-impl Args {
-    const DATABASE_FILEPATH_ID: &'static str = "db=";
-    const DATABASE_MISSING: &'static str = "There is no `db=/<file>` given.";
-}
-
-impl TryFrom<Vec<String>> for Args {
-    type Error = &'static str;
-
-    fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
-        let database_filepath = pam_utils::extract_named_value(&value, Self::DATABASE_FILEPATH_ID)
-            .ok_or(Self::DATABASE_MISSING)?
-            .into();
-
-        Ok(Self { database_filepath })
-    }
-}
+#[cfg(feature = "sandbox")]
+#[cfg(not(target_os = "linux"))]
+compile_error!(
+    "Feature \"sandbox\" is not supported on the platform. Use \"--no-default-features\""
+);
 
 struct PamPin;
 
 impl PamPin {
+    #[cfg(feature = "sandbox")]
+    fn setup_sandbox(args: &args::Args) -> birdcage::error::Result<()> {
+        use birdcage::{Birdcage, Sandbox};
+
+        let mut birdcage = Birdcage::new()?;
+
+        birdcage.add_exception(birdcage::Exception::Read(args.database_filepath.clone()))?;
+
+        birdcage.lock()
+    }
+
     fn get_user_pin(pamh: &Pam) -> PamResult<&CStr> {
         pamh.conv(Some("Pin: "), pamsm::PamMsgStyle::PROMPT_ECHO_OFF)?
             .ok_or(PamError::AUTHTOK_RECOVERY_ERR)
@@ -44,7 +39,10 @@ impl PamPin {
     }
 
     fn auth(pamh: Pam, flags: PamFlags, args: Vec<String>) -> Result<(), PamError> {
-        let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
+        let args: args::Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
+
+        #[cfg(feature = "sandbox")]
+        Self::setup_sandbox(&args).pam_err(&flags)?;
 
         let user_name = pam_utils::get_username(&pamh, &flags)?;
         let users_data = pin_data::Data::from_file(&args.database_filepath).pam_err(&flags)?;
@@ -61,8 +59,7 @@ impl PamPin {
 
 impl PamServiceModule for PamPin {
     fn authenticate(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamError {
-        err_try!(Self::auth(pamh, flags, args));
-        PamError::SUCCESS
+        pam_utils::do_call_handler(&Self::auth, pamh, flags, args)
     }
 }
 

@@ -11,6 +11,47 @@ macro_rules! err_try {
     };
 }
 
+#[repr(transparent)]
+#[allow(dead_code)]
+struct PamMoveHandle {
+    handle_address: usize,
+}
+
+// unsafe impl Send for PamMoveHandle {}
+
+impl From<Pam> for PamMoveHandle {
+    fn from(value: Pam) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl From<PamMoveHandle> for Pam {
+    fn from(value: PamMoveHandle) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+pub fn do_call_handler(
+    handler: &'static (dyn Fn(Pam, PamFlags, Vec<String>) -> Result<(), PamError> + Send + Sync),
+    pamh: Pam,
+    flags: PamFlags,
+    args: Vec<String>,
+) -> PamError {
+    #[cfg(not(feature = "sandbox"))]
+    let res = handler(pamh, flags, args);
+    #[cfg(feature = "sandbox")]
+    let res = {
+        let moving_handle = PamMoveHandle::from(pamh);
+        let sandbox_thread = std::thread::spawn(move || handler(moving_handle.into(), flags, args));
+        err_try!(sandbox_thread
+            .join()
+            .map_err(|_| "A panic happened in the sandboxed thread")
+            .pam_err(&flags))
+    };
+    err_try!(res);
+    PamError::SUCCESS
+}
+
 pub trait IntoPamError<T> {
     fn pam_err(self, flags: &PamFlags) -> Result<T, PamError>
     where

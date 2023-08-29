@@ -10,3 +10,6 @@ edition = "2021"
 
 [dependencies]
 pamsm = { version = "0.5.2", features = ["libpam"] }
+
+[features]
+sandbox = []
