@@ -11,23 +11,31 @@ macro_rules! err_try {
     };
 }
 
-#[repr(transparent)]
-#[allow(dead_code)]
-struct PamMoveHandle {
-    handle_address: usize,
-}
+#[cfg(feature = "sandbox")]
+mod sandbox {
+    use pamsm::Pam;
 
-// unsafe impl Send for PamMoveHandle {}
+    #[cfg(not(target_os = "linux"))]
+    compile_error!(
+        "Feature \"sandbox\" is not supported on the platform. Use \"--no-default-features\""
+    );
 
-impl From<Pam> for PamMoveHandle {
-    fn from(value: Pam) -> Self {
-        unsafe { std::mem::transmute(value) }
+    #[repr(transparent)]
+    #[allow(dead_code)]
+    pub struct PamMoveHandle {
+        handle_address: usize,
     }
-}
 
-impl From<PamMoveHandle> for Pam {
-    fn from(value: PamMoveHandle) -> Self {
-        unsafe { std::mem::transmute(value) }
+    impl From<Pam> for PamMoveHandle {
+        fn from(value: Pam) -> Self {
+            unsafe { std::mem::transmute(value) }
+        }
+    }
+
+    impl From<PamMoveHandle> for Pam {
+        fn from(value: PamMoveHandle) -> Self {
+            unsafe { std::mem::transmute(value) }
+        }
     }
 }
 
@@ -41,7 +49,7 @@ pub fn do_call_handler(
     let res = handler(pamh, flags, args);
     #[cfg(feature = "sandbox")]
     let res = {
-        let moving_handle = PamMoveHandle::from(pamh);
+        let moving_handle = sandbox::PamMoveHandle::from(pamh);
         let sandbox_thread = std::thread::spawn(move || handler(moving_handle.into(), flags, args));
         err_try!(sandbox_thread
             .join()

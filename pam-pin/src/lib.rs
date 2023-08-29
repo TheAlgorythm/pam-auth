@@ -9,12 +9,6 @@ use pamsm::{Pam, PamError, PamFlags, PamLibExt, PamResult, PamServiceModule};
 use password_hash::PasswordHash;
 use std::ffi::CStr;
 
-#[cfg(feature = "sandbox")]
-#[cfg(not(target_os = "linux"))]
-compile_error!(
-    "Feature \"sandbox\" is not supported on the platform. Use \"--no-default-features\""
-);
-
 struct PamPin;
 
 impl PamPin {
