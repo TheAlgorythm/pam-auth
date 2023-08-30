@@ -1,0 +1,9 @@
+auth    optional            pam_echo.so                %s before auth
+auth	[success=1 default=ignore]	pam_direct_fallback.so    store=/etc/security/direct-fallback
+auth	requisite			pam_deny.so
+auth    optional            pam_echo.so                %s before reset
+auth	optional	        pam_direct_fallback.so    reset store=/etc/security/direct-fallback
+auth    optional            pam_echo.so                %s after reset
+auth	required			pam_permit.so
+
+session optional           	pam_direct_fallback.so    store=/etc/security/direct-fallback

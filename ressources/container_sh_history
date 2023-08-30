@@ -1,0 +1,4 @@
+touch /etc/security/direct-fallback/test-user
+pamtester direct-fallback-test test-user open_session
+pamtester direct-fallback-test test-user authenticate
+pamtester pin-test test-user authenticate
