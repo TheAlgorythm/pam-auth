@@ -1,76 +1,15 @@
 #[macro_use]
 extern crate pamsm;
-#[macro_use]
-extern crate pam_utils;
 
-use pam_utils::IntoPamError;
+mod args;
+mod path;
+
+use args::Args;
+use pam_utils::{do_call_handler, IntoPamError};
 use pamsm::{Pam, PamError, PamFlags, PamResult, PamServiceModule};
+use path::{PathComponent, PushPathComponent};
 use std::fs::{remove_file, File};
 use std::path::PathBuf;
-
-struct Args {
-    pub user_store: PathBuf,
-    pub reset: bool,
-}
-
-impl Args {
-    const USER_STORE_ID: &'static str = "store=";
-    const USER_STORE_MISSING: &'static str = "There is no `store=/<dir>` given.";
-    const RESET_ID: &'static str = "reset";
-}
-
-impl TryFrom<Vec<String>> for Args {
-    type Error = &'static str;
-
-    fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
-        let user_store = pam_utils::extract_named_value(&value, Self::USER_STORE_ID)
-            .ok_or(Self::USER_STORE_MISSING)?
-            .into();
-        let reset = value.contains(&Self::RESET_ID.to_string());
-
-        Ok(Self { user_store, reset })
-    }
-}
-
-struct PathComponent {
-    path: PathBuf,
-}
-
-impl PathComponent {
-    pub fn new<S: Into<PathBuf>>(component: S) -> Option<Self> {
-        let component = Self {
-            path: component.into(),
-        };
-
-        component.is_valid().then_some(component)
-    }
-
-    fn is_valid(&self) -> bool {
-        use std::path::Component;
-
-        let mut components = self.path.components();
-        matches!(
-            (components.next(), components.next()),
-            (Some(Component::Normal(_)), None)
-        )
-    }
-}
-
-impl AsRef<std::path::Path> for PathComponent {
-    fn as_ref(&self) -> &std::path::Path {
-        &self.path
-    }
-}
-
-trait PushPathComponent {
-    fn push_component(&mut self, component: PathComponent);
-}
-
-impl PushPathComponent for PathBuf {
-    fn push_component(&mut self, component: PathComponent) {
-        self.push(component);
-    }
-}
 
 fn user_file(dir: PathBuf, username: String) -> PathBuf {
     let mut user_data_file = dir;
@@ -85,6 +24,9 @@ impl PamDirectFallback {
     fn start_session(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamResult<()> {
         let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
 
+        #[cfg(feature = "sandbox")]
+        Self::setup_sandbox(&args).pam_err(&flags)?;
+
         let username = pam_utils::get_username(&pamh, &flags)?;
 
         let user_data_file = user_file(args.user_store, username);
@@ -95,6 +37,9 @@ impl PamDirectFallback {
     fn auth(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamResult<()> {
         let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
 
+        #[cfg(feature = "sandbox")]
+        Self::setup_sandbox(&args).pam_err(&flags)?;
+
         let username = pam_utils::get_username(&pamh, &flags)?;
 
         let user_data_file = user_file(args.user_store, username);
@@ -104,6 +49,17 @@ impl PamDirectFallback {
         } else {
             Self::set(user_data_file, flags)
         }
+    }
+
+    #[cfg(feature = "sandbox")]
+    fn setup_sandbox(args: &Args) -> birdcage::error::Result<()> {
+        use birdcage::{Birdcage, Sandbox};
+
+        let mut birdcage = Birdcage::new()?;
+
+        birdcage.add_exception(birdcage::Exception::Write(args.user_store.clone()))?;
+
+        birdcage.lock()
     }
 
     fn set(user_data_file: PathBuf, flags: PamFlags) -> Result<(), PamError> {
@@ -130,8 +86,7 @@ impl PamDirectFallback {
 
 impl PamServiceModule for PamDirectFallback {
     fn open_session(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamError {
-        err_try!(Self::start_session(pamh, flags, args));
-        PamError::SUCCESS
+        do_call_handler(&Self::start_session, pamh, flags, args)
     }
 
     fn close_session(_pamh: Pam, _flags: PamFlags, _args: Vec<String>) -> PamError {
@@ -139,15 +94,8 @@ impl PamServiceModule for PamDirectFallback {
     }
 
     fn authenticate(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamError {
-        err_try!(Self::auth(pamh, flags, args));
-        PamError::SUCCESS
+        do_call_handler(&Self::auth, pamh, flags, args)
     }
 }
 
 pam_module!(PamDirectFallback);
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {}
-}
