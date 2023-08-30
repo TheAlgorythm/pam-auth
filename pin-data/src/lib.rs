@@ -1,5 +1,6 @@
 use argon2::password_hash::{PasswordHash, PasswordHashString};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serializer};
+use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
