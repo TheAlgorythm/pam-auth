@@ -48,14 +48,14 @@ pub fn do_call_handler(
     #[cfg(not(feature = "sandbox"))]
     let res = handler(pamh, flags, args);
     #[cfg(feature = "sandbox")]
-    let res = {
+    let res = err_try!(std::thread::scope(|scope| {
         let moving_handle = sandbox::PamMoveHandle::from(pamh);
-        let sandbox_thread = std::thread::spawn(move || handler(moving_handle.into(), flags, args));
-        err_try!(sandbox_thread
+        let sandbox_thread = scope.spawn(move || handler(moving_handle.into(), flags, args));
+        sandbox_thread
             .join()
             .map_err(|_| "A panic happened in the sandboxed thread")
-            .pam_err(&flags))
-    };
+            .pam_err(&flags)
+    }));
     err_try!(res);
     PamError::SUCCESS
 }
