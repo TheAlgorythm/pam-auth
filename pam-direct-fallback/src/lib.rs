@@ -21,26 +21,26 @@ fn user_file(dir: PathBuf, username: String) -> PathBuf {
 struct PamDirectFallback;
 
 impl PamDirectFallback {
-    fn start_session(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamResult<()> {
+    fn start_session(pamh: &Pam, flags: PamFlags, args: Vec<String>) -> PamResult<()> {
         let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
 
         #[cfg(feature = "sandbox")]
         Self::setup_sandbox(&args).pam_err(&flags)?;
 
-        let username = pam_utils::get_username(&pamh, &flags)?;
+        let username = pam_utils::get_username(pamh, &flags)?;
 
         let user_data_file = user_file(args.user_store, username);
 
         Self::reset(user_data_file, flags)
     }
 
-    fn auth(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamResult<()> {
+    fn auth(pamh: &Pam, flags: PamFlags, args: Vec<String>) -> PamResult<()> {
         let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
 
         #[cfg(feature = "sandbox")]
         Self::setup_sandbox(&args).pam_err(&flags)?;
 
-        let username = pam_utils::get_username(&pamh, &flags)?;
+        let username = pam_utils::get_username(pamh, &flags)?;
 
         let user_data_file = user_file(args.user_store, username);
 
@@ -86,7 +86,7 @@ impl PamDirectFallback {
 
 impl PamServiceModule for PamDirectFallback {
     fn open_session(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamError {
-        do_call_handler(&Self::start_session, pamh, flags, args)
+        do_call_handler(Self::start_session, pamh, flags, args)
     }
 
     fn close_session(_pamh: Pam, _flags: PamFlags, _args: Vec<String>) -> PamError {
@@ -94,7 +94,7 @@ impl PamServiceModule for PamDirectFallback {
     }
 
     fn authenticate(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamError {
-        do_call_handler(&Self::auth, pamh, flags, args)
+        do_call_handler(Self::auth, pamh, flags, args)
     }
 }
 

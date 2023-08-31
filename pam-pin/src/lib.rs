@@ -32,19 +32,19 @@ impl PamPin {
         hash.verify_password(&[&Argon2::default()], pin)
     }
 
-    fn auth(pamh: Pam, flags: PamFlags, args: Vec<String>) -> Result<(), PamError> {
+    fn auth(pamh: &Pam, flags: PamFlags, args: Vec<String>) -> Result<(), PamError> {
         let args: args::Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
 
         #[cfg(feature = "sandbox")]
         Self::setup_sandbox(&args).pam_err(&flags)?;
 
-        let user_name = pam_utils::get_username(&pamh, &flags)?;
+        let user_name = pam_utils::get_username(pamh, &flags)?;
         let users_data = pin_data::Data::from_file(&args.database_filepath).pam_err(&flags)?;
         let user = users_data
             .get_by_name(&user_name)
             .ok_or(PamError::USER_UNKNOWN)?;
 
-        let pin = Self::get_user_pin(&pamh)?;
+        let pin = Self::get_user_pin(pamh)?;
 
         Self::verify_pin(user.pin_hash(), pin.to_bytes()).pam_err(&flags)?;
         Ok(())
@@ -53,7 +53,7 @@ impl PamPin {
 
 impl PamServiceModule for PamPin {
     fn authenticate(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamError {
-        pam_utils::do_call_handler(&Self::auth, pamh, flags, args)
+        pam_utils::do_call_handler(Self::auth, pamh, flags, args)
     }
 }
 
