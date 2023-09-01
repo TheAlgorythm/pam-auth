@@ -32,8 +32,45 @@ fn hash_pin(
         .map(|hash| hash.serialize())
 }
 
+#[cfg(feature = "sandbox")]
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+compile_error!(
+    "Feature \"sandbox\" is not supported on the platform. Use \"--no-default-features\""
+);
+
+#[cfg(feature = "sandbox")]
+fn setup_sandbox(args: &cli::CliArgs) -> birdcage::error::Result<()> {
+    use birdcage::{Birdcage, Sandbox};
+
+    let mut birdcage = Birdcage::new()?;
+
+    if !args.benchmark {
+        // prompt_password
+        const TTY_PATH: &str = "/dev/tty";
+        birdcage.add_exception(birdcage::Exception::Read(TTY_PATH.into()))?;
+        birdcage.add_exception(birdcage::Exception::Write(TTY_PATH.into()))?;
+
+        // Use the parent as the database file could be nonexistent
+        let mut database_parent = args
+            .database_filepath
+            .parent()
+            .expect("Couldn't get the parent directory of the database")
+            .to_path_buf();
+        if database_parent.as_os_str().is_empty() {
+            database_parent = ".".into();
+        }
+        birdcage.add_exception(birdcage::Exception::Write(database_parent))?;
+    }
+
+    birdcage.lock()
+}
+
 fn main() {
     let args = cli::CliArgs::parse();
+
+    #[cfg(feature = "sandbox")]
+    eprint_try!(setup_sandbox(&args));
+
     eprint_try!(args.validate());
 
     let argon2_params = eprint_try!(args.argon2_params());

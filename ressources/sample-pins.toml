@@ -1,0 +1,4 @@
+[[users]]
+name = "test-user"
+# pin = "1234"
+pin_hash = "$argon2d$v=19$m=4096,t=3,p=1$IsboQeAUwe6xgPtZ+WoYwA$lPwhmhsOZymdymjMAtEizmQ8MKXG0MK0aL4+9rkoyac"
