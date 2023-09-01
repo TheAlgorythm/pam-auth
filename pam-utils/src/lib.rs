@@ -12,32 +12,10 @@ macro_rules! err_try {
 }
 
 #[cfg(feature = "sandbox")]
-mod sandbox {
-    use pamsm::Pam;
-
-    #[cfg(not(target_os = "linux"))]
-    compile_error!(
-        "Feature \"sandbox\" is not supported on the platform. Use \"--no-default-features\""
-    );
-
-    #[repr(transparent)]
-    #[allow(dead_code)]
-    pub struct PamMoveHandle {
-        handle_address: usize,
-    }
-
-    impl From<Pam> for PamMoveHandle {
-        fn from(value: Pam) -> Self {
-            unsafe { std::mem::transmute(value) }
-        }
-    }
-
-    impl From<PamMoveHandle> for Pam {
-        fn from(value: PamMoveHandle) -> Self {
-            unsafe { std::mem::transmute(value) }
-        }
-    }
-}
+#[cfg(not(target_os = "linux"))]
+compile_error!(
+    "Feature \"sandbox\" is not supported on the platform. Use \"--no-default-features\""
+);
 
 pub fn do_call_handler<F: Fn(&Pam, PamFlags, Vec<String>) -> Result<(), PamError> + Send>(
     handler: F,
@@ -55,14 +33,14 @@ pub fn do_call_handler<F: Fn(&Pam, PamFlags, Vec<String>) -> Result<(), PamError
 
 #[cfg(feature = "sandbox")]
 fn do_threaded_call<F: Fn(&Pam, PamFlags, Vec<String>) -> Result<(), PamError> + Send>(
-    pamh: Pam,
+    mut pamh: Pam,
     handler: F,
     flags: PamFlags,
     args: Vec<String>,
 ) -> Result<(), PamError> {
     std::thread::scope(|scope| {
-        let moving_handle = sandbox::PamMoveHandle::from(pamh);
-        let sandbox_thread = scope.spawn(move || handler(&moving_handle.into(), flags, args));
+        let moving_handle = pamh.as_send_ref();
+        let sandbox_thread = scope.spawn(move || handler(&moving_handle, flags, args));
         sandbox_thread
             .join()
             .map_err(|_| "A panic happened in the sandboxed thread")
