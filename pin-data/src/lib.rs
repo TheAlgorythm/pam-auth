@@ -1,9 +1,10 @@
 use argon2::password_hash::{PasswordHash, PasswordHashString};
+use error_stack::ResultExt;
 use serde::{Deserialize, Deserializer, Serializer};
 use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -79,9 +80,10 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn from_file(path: &dyn AsRef<Path>) -> Result<Self, IoSerdeError> {
-        let data_string = std::fs::read_to_string(path)?;
-        toml::from_str(&data_string).map_err(IoSerdeError::Deserialize)
+    pub fn from_file(path: &dyn AsRef<Path>) -> error_stack::Result<Self, IoSerdeError> {
+        let data_string = std::fs::read_to_string(path)
+            .change_context(IoSerdeError::Read(path.as_ref().to_path_buf()))?;
+        toml::from_str(&data_string).change_context(IoSerdeError::Deserialize)
     }
 
     pub fn get_by_name<'a>(&'a self, name: &str) -> Option<&'a User> {
@@ -92,9 +94,11 @@ impl Data {
 #[derive(Error, Debug)]
 pub enum IoSerdeError {
     #[error(transparent)]
-    Read(#[from] std::io::Error),
+    Write(#[from] std::io::Error),
+    #[error("Couldn't read from file '{}'", .0.display())]
+    Read(PathBuf),
     #[error(transparent)]
     Serialize(#[from] toml::ser::Error),
-    #[error(transparent)]
-    Deserialize(#[from] toml::de::Error),
+    #[error("Couldn't deserialize file")]
+    Deserialize,
 }

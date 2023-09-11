@@ -30,8 +30,10 @@ where
 {
     #[cfg(not(feature = "sandbox"))]
     let res = handler(&pamh, flags, args);
+
     #[cfg(feature = "sandbox")]
     let res = do_threaded_call(pamh, handler, flags, args, sandbox_panic_error);
+
     if let Err(error_context) = res {
         if !flags.contains(PamFlags::SILENT) {
             println!("Error: {:?}", error_context);
