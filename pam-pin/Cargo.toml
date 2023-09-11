@@ -12,6 +12,8 @@ edition = "2021"
 pamsm = { version = "0.5.2", features = ["libpam"] }
 pam-utils = { path = "../pam-utils" }
 pin-data = { path = "../pin-data" }
+thiserror = "1"
+error-stack = "0.4"
 argon2 = { version = "0.4.1", features = ["std", "parallel"] }
 birdcage = { version = "0.2", optional = true }
 

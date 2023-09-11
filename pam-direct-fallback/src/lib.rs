@@ -5,88 +5,116 @@ mod args;
 mod path;
 
 use args::Args;
-use pam_utils::{do_call_handler, IntoPamError};
-use pamsm::{Pam, PamError, PamFlags, PamResult, PamServiceModule};
+use error_stack::{Report, ResultExt};
+use pam_utils::do_call_handler;
+use pamsm::{Pam, PamError, PamFlags, PamServiceModule};
 use path::{PathComponent, PushPathComponent};
 use std::fs::{remove_file, File};
 use std::path::PathBuf;
 
-fn user_file(dir: PathBuf, username: String) -> PathBuf {
+#[derive(thiserror::Error, Debug, Clone)]
+enum Error {
+    #[error("A panic happened in the sandboxed thread")]
+    SandboxPanic,
+    #[error("There is no `store=/<dir>` given.")]
+    MissingUserStoreArg,
+    #[error("Couldn't build sandbox")]
+    Sandbox,
+    #[error("Internal PAM error")]
+    Pam,
+    #[error("User not known")]
+    UnknownUser,
+    #[error("Username has dissalowed characters")]
+    InvalidUsername,
+    #[error("Couldn't authenticate the user")]
+    Auth,
+    #[error("Couldn't reset the account authentication state")]
+    Reset,
+}
+
+type Result<T> = error_stack::Result<T, Error>;
+
+fn user_file(dir: PathBuf, username: String) -> Result<PathBuf> {
     let mut user_data_file = dir;
-    let user_file_name = PathComponent::new(username).unwrap();
+    let user_file_name = PathComponent::new(username).ok_or(Error::InvalidUsername)?;
     user_data_file.push_component(user_file_name);
-    user_data_file
+    Ok(user_data_file)
 }
 
 struct PamDirectFallback;
 
 impl PamDirectFallback {
-    fn start_session(pamh: &Pam, flags: PamFlags, args: Vec<String>) -> PamResult<()> {
-        let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
+    fn start_session(pamh: &Pam, _flags: PamFlags, args: Vec<String>) -> Result<()> {
+        let args = Args::try_from(args).attach(PamError::IGNORE)?;
 
         #[cfg(feature = "sandbox")]
-        Self::setup_sandbox(&args).pam_err(&flags)?;
+        Self::setup_sandbox(&args)?;
 
-        let username = pam_utils::get_username(pamh, &flags)?;
+        let username = pam_utils::get_username(pamh, Error::Pam, Error::UnknownUser)?;
 
-        let user_data_file = user_file(args.user_store, username);
+        let user_data_file = user_file(args.user_store, username)?;
 
-        Self::reset(user_data_file, flags)
+        Self::reset(user_data_file)
     }
 
-    fn auth(pamh: &Pam, flags: PamFlags, args: Vec<String>) -> PamResult<()> {
-        let args: Args = args.try_into().pam_custom_err(PamError::IGNORE, &flags)?;
+    fn auth(pamh: &Pam, _flags: PamFlags, args: Vec<String>) -> Result<()> {
+        let args = Args::try_from(args).attach(PamError::IGNORE)?;
 
         #[cfg(feature = "sandbox")]
-        Self::setup_sandbox(&args).pam_err(&flags)?;
+        Self::setup_sandbox(&args)?;
 
-        let username = pam_utils::get_username(pamh, &flags)?;
+        let username = pam_utils::get_username(pamh, Error::Pam, Error::UnknownUser)?;
 
-        let user_data_file = user_file(args.user_store, username);
+        let user_data_file = user_file(args.user_store, username)?;
 
         if args.reset {
-            Self::reset(user_data_file, flags)
+            Self::reset(user_data_file)
         } else {
-            Self::set(user_data_file, flags)
+            Self::set(user_data_file)
         }
     }
 
     #[cfg(feature = "sandbox")]
-    fn setup_sandbox(args: &Args) -> birdcage::error::Result<()> {
+    fn setup_sandbox(args: &args::Args) -> Result<()> {
         use birdcage::{Birdcage, Sandbox};
 
-        let mut birdcage = Birdcage::new()?;
+        let mut birdcage = Birdcage::new()
+            .change_context(Error::Sandbox)
+            .attach_printable("Initialization failed")?;
 
-        birdcage.add_exception(birdcage::Exception::Write(args.user_store.clone()))?;
+        birdcage
+            .add_exception(birdcage::Exception::Write(args.user_store.clone()))
+            .change_context(Error::Sandbox)
+            .attach_printable("Couldn't set the user store as writeable")?;
 
-        birdcage.lock()
+        birdcage
+            .lock()
+            .change_context(Error::Sandbox)
+            .attach_printable("Couldn't activate sandbox")
     }
 
-    fn set(user_data_file: PathBuf, flags: PamFlags) -> Result<(), PamError> {
+    fn set(user_data_file: PathBuf) -> Result<()> {
         File::options()
             .write(true)
             .create_new(true)
             .open(user_data_file)
             .map(|_| ())
-            .or_else(|e| match e.kind() {
-                std::io::ErrorKind::AlreadyExists => Err(PamError::AUTH_ERR),
-                _ => Err(e).pam_err(&flags),
+            .map_err(|e| match e.kind() {
+                std::io::ErrorKind::AlreadyExists => Report::new(e)
+                    .change_context(Error::Auth)
+                    .attach(PamError::AUTH_ERR),
+                _ => Report::new(e).change_context(Error::Auth),
             })
     }
 
-    fn reset(user_data_file: PathBuf, flags: PamFlags) -> Result<(), PamError> {
-        remove_file(user_data_file)
-            .or_else(|e| match e.kind() {
-                std::io::ErrorKind::AlreadyExists => Ok(()),
-                _ => Err(e),
-            })
-            .pam_err(&flags)
+    fn reset(user_data_file: PathBuf) -> Result<()> {
+        remove_file(user_data_file).change_context(Error::Reset)
     }
 }
 
 impl PamServiceModule for PamDirectFallback {
     fn open_session(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamError {
-        do_call_handler(Self::start_session, pamh, flags, args)
+        do_call_handler(Self::start_session, pamh, flags, args, Error::SandboxPanic)
     }
 
     fn close_session(_pamh: Pam, _flags: PamFlags, _args: Vec<String>) -> PamError {
@@ -94,7 +122,7 @@ impl PamServiceModule for PamDirectFallback {
     }
 
     fn authenticate(pamh: Pam, flags: PamFlags, args: Vec<String>) -> PamError {
-        do_call_handler(Self::auth, pamh, flags, args)
+        do_call_handler(Self::auth, pamh, flags, args, Error::SandboxPanic)
     }
 }
 

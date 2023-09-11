@@ -6,15 +6,14 @@ pub(crate) struct Args {
 
 impl Args {
     const DATABASE_FILEPATH_ID: &'static str = "db=";
-    const DATABASE_MISSING: &'static str = "There is no `db=/<file>` given.";
 }
 
 impl TryFrom<Vec<String>> for Args {
-    type Error = &'static str;
+    type Error = crate::Error;
 
     fn try_from(value: Vec<String>) -> Result<Self, Self::Error> {
         let database_filepath = pam_utils::extract_named_value(&value, Self::DATABASE_FILEPATH_ID)
-            .ok_or(Self::DATABASE_MISSING)?
+            .ok_or(crate::Error::MissingDatabaseArg)?
             .into();
 
         Ok(Self { database_filepath })
