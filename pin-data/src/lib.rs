@@ -45,11 +45,11 @@ impl User {
         self.pin_hash.password_hash()
     }
 
-    pub fn append_to_file(&self, path: &dyn AsRef<Path>) -> Result<(), IoSerdeError> {
+    pub fn append_to_file(&self, path: &dyn AsRef<Path>) -> error_stack::Result<(), IoSerdeError> {
         let data = Data {
             users: vec![self.clone()],
         };
-        let data = toml::to_string(&data)?;
+        let data = toml::to_string(&data).change_context(IoSerdeError::Serialize)?;
 
         let mut file_options = File::options();
         file_options.append(true).create(true);
@@ -59,16 +59,23 @@ impl User {
             file_options.mode(0o600);
         }
 
-        let mut file = file_options.open(path)?;
+        let write_error = || IoSerdeError::Write(path.as_ref().to_path_buf());
 
-        let is_created = file.metadata()?.len() == 0;
+        let mut file = file_options.open(path).change_context_lazy(write_error)?;
+
+        let is_created = file
+            .metadata()
+            .change_context(IoSerdeError::Read(path.as_ref().to_path_buf()))?
+            .len()
+            == 0;
 
         if is_created {
-            file.write_all(data.as_bytes())?;
+            file.write_all(data.as_bytes())
+                .change_context_lazy(write_error)?;
         } else {
-            write!(file, "\n{}", data)?;
+            write!(file, "\n{}", data).change_context_lazy(write_error)?;
         }
-        file.flush()?;
+        file.flush().change_context_lazy(write_error)?;
 
         Ok(())
     }
@@ -93,12 +100,12 @@ impl Data {
 
 #[derive(Error, Debug)]
 pub enum IoSerdeError {
-    #[error(transparent)]
-    Write(#[from] std::io::Error),
+    #[error("Couldn't write to file '{}'", .0.display())]
+    Write(PathBuf),
     #[error("Couldn't read from file '{}'", .0.display())]
     Read(PathBuf),
-    #[error(transparent)]
-    Serialize(#[from] toml::ser::Error),
+    #[error("Couldn't serialize structure")]
+    Serialize,
     #[error("Couldn't deserialize file")]
     Deserialize,
 }

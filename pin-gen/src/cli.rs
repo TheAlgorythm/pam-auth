@@ -1,4 +1,6 @@
+use crate::{Error, Result};
 use clap::Parser;
+use error_stack::ResultExt;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug, Clone)]
@@ -28,13 +30,13 @@ pub struct CliArgs {
 }
 
 impl CliArgs {
-    pub fn validate(&self) -> Result<(), &str> {
+    pub fn validate(&self) -> Result<()> {
         (self.benchmark || self.username.is_some())
             .then_some(())
-            .ok_or("username not specified")
+            .ok_or(Error::NoUsername.into())
     }
 
-    pub fn argon2_params(&self) -> argon2::Result<argon2::Params> {
+    pub fn argon2_params(&self) -> Result<argon2::Params> {
         let mut argon2_params = argon2::ParamsBuilder::new();
 
         if let Some(memory_cost) = self.memory_cost {
@@ -47,6 +49,8 @@ impl CliArgs {
             argon2_params.p_cost(parallelism);
         }
 
-        argon2_params.build()
+        argon2_params
+            .build()
+            .change_context(Error::InvalidPhfParameter)
     }
 }

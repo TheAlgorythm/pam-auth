@@ -363,9 +363,12 @@ dependencies = [
  "argon2",
  "birdcage",
  "clap",
+ "error-stack",
  "pin-data",
  "rand_core",
  "rpassword",
+ "sysexits",
+ "thiserror",
 ]
 
 [[package]]
@@ -526,6 +529,12 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "sysexits"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed767c454d933992df9ed9f4fdc01f67630d41879d45f54792a6f83c2269a3d6"
 
 [[package]]
 name = "termcolor"
