@@ -9,13 +9,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pamsm = { version = "0.5.2", features = ["libpam"] }
+pamsm = { version = "0.5", features = ["libpam"] }
 pam-utils = { path = "../pam-utils" }
 pin-data = { path = "../pin-data" }
 thiserror = "1"
 error-stack = "0.4"
-argon2 = { version = "0.4.1", features = ["std", "parallel"] }
-birdcage = { version = "0.2", optional = true }
+argon2 = { version = "0.5", features = ["std"] }
+birdcage = { version = "0.3", optional = true }
 
 [features]
 default = ["sandbox"]

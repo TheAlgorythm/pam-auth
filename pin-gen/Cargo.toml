@@ -10,11 +10,11 @@ edition = "2021"
 
 [dependencies]
 pin-data = { path = "../pin-data" }
-argon2 = { version = "0.4.1", features = ["std", "parallel"] }
-rand_core = { version = "0.6.3", features = ["std"] }
-rpassword = "7.0.0"
-clap = { version = "3.2.16", features = ["derive"] }
-birdcage = { version = "0.2", optional = true }
+argon2 = { version = "0.5", features = ["std"] }
+rand_core = { version = "0.6", features = ["std"] }
+rpassword = "7.2"
+clap = { version = "3.2", features = ["derive"] }
+birdcage = { version = "0.3", optional = true }
 
 [features]
 default = ["sandbox"]

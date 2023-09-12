@@ -38,15 +38,15 @@ impl CliArgs {
         let mut argon2_params = argon2::ParamsBuilder::new();
 
         if let Some(memory_cost) = self.memory_cost {
-            argon2_params.m_cost(memory_cost)?;
+            argon2_params.m_cost(memory_cost);
         }
         if let Some(time_cost) = self.time_cost {
-            argon2_params.t_cost(time_cost)?;
+            argon2_params.t_cost(time_cost);
         }
         if let Some(parallelism) = self.parallelism {
-            argon2_params.p_cost(parallelism)?;
+            argon2_params.p_cost(parallelism);
         }
 
-        argon2_params.params()
+        argon2_params.build()
     }
 }
