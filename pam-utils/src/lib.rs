@@ -19,7 +19,7 @@ compile_error!(
 
 pub fn do_call_handler<C, F>(
     handler: F,
-    pamh: Pam,
+    mut pamh: Pam,
     flags: PamFlags,
     args: Vec<String>,
     sandbox_panic_error: C,
@@ -28,16 +28,16 @@ where
     C: error_stack::Context,
     F: Fn(&Pam, PamFlags, Vec<String>) -> error_stack::Result<(), C> + Send,
 {
+    let is_debug = is_debug(&args);
+
     #[cfg(not(feature = "sandbox"))]
     let res = handler(&pamh, flags, args);
 
     #[cfg(feature = "sandbox")]
-    let res = do_threaded_call(pamh, handler, flags, args, sandbox_panic_error);
+    let res = do_threaded_call(&mut pamh, handler, flags, args, sandbox_panic_error);
 
     if let Err(error_context) = res {
-        if !flags.contains(PamFlags::SILENT) {
-            println!("Error: {:?}", error_context);
-        }
+        print_error(&error_context, &pamh, flags, is_debug);
 
         return error_context
             .downcast_ref::<PamError>()
@@ -49,7 +49,7 @@ where
 
 #[cfg(feature = "sandbox")]
 fn do_threaded_call<C, F>(
-    mut pamh: Pam,
+    pamh: &mut Pam,
     handler: F,
     flags: PamFlags,
     args: Vec<String>,
@@ -65,15 +65,41 @@ where
         sandbox_thread
             .join()
             .map_err(|_| error_stack::Report::new(sandbox_panic_error))
-        // .map_err(|_| "A panic happened in the sandboxed thread")
-        // .pam_err(&flags)
     })?
+}
+
+fn print_error<C>(
+    error_context: &error_stack::Report<C>,
+    pamh: &Pam,
+    flags: PamFlags,
+    is_debug: bool,
+) where
+    C: error_stack::Context,
+{
+    if !flags.contains(PamFlags::SILENT) {
+        let error_message = if is_debug {
+            format!("Error: {:?}", error_context)
+        } else {
+            format!("Error: {}", error_context)
+        };
+        let print_error = "Couldn't print error message";
+        let input = pamh
+            .conv(Some(&error_message), pamsm::PamMsgStyle::ERROR_MSG)
+            .expect(print_error);
+        assert!(input.is_none(), "{} correctly", print_error);
+    }
 }
 
 pub fn extract_named_value<'a>(args: &'a [String], key: &str) -> Option<&'a str> {
     args.iter()
         .find(|arg| arg.starts_with(key))
         .map(|value| value.trim_start_matches(key))
+}
+
+const DEBUG_ID: &str = "debug";
+
+pub fn is_debug(args: &[String]) -> bool {
+    args.contains(&DEBUG_ID.to_string())
 }
 
 pub fn get_username<E: error_stack::Context + Clone>(
