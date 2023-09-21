@@ -3,12 +3,25 @@ WORKDIR /usr/src/pam-auth
 RUN apt update && apt install -y libpam-dev && rm -rf /var/lib/apt/lists/*
 
 COPY Cargo.toml Cargo.lock .
+COPY pin-data/Cargo.toml pin-data/
+COPY pin-gen/Cargo.toml pin-gen/
+COPY pam-utils/Cargo.toml pam-utils/
+COPY pam-pin/Cargo.toml pam-pin/
+COPY pam-direct-fallback/Cargo.toml pam-direct-fallback/
+
+
+RUN mkdir pam-utils/src pam-pin/src pin-data/src pin-gen/src pam-direct-fallback/src \
+    && touch pam-utils/src/lib.rs pam-pin/src/lib.rs pin-data/src/lib.rs \
+      pin-gen/src/main.rs pam-direct-fallback/src/lib.rs \
+    && cargo fetch
+
 COPY pin-data pin-data
 COPY pin-gen pin-gen
 COPY pam-utils pam-utils
 COPY pam-pin pam-pin
 COPY pam-direct-fallback pam-direct-fallback
 
+# RUN cargo fetch
 RUN cargo build --release
 # RUN cargo build --release --no-default-features
 

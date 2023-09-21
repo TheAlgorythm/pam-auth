@@ -11,6 +11,7 @@ edition = "2021"
 [dependencies]
 serde = "1"
 serde_derive = "1"
-thiserror = "1.0.31"
-toml = "0.5.9"
-argon2 = { version = "0.4.1", features = ["std"] }
+toml = "0.7"
+argon2 = { version = "0.5", features = ["std"] }
+thiserror = "1"
+error-stack = "0.4"

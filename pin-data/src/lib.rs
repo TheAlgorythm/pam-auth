@@ -1,9 +1,10 @@
 use argon2::password_hash::{PasswordHash, PasswordHashString};
+use error_stack::ResultExt;
 use serde::{Deserialize, Deserializer, Serializer};
 use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -44,11 +45,11 @@ impl User {
         self.pin_hash.password_hash()
     }
 
-    pub fn append_to_file(&self, path: &dyn AsRef<Path>) -> Result<(), IoSerdeError> {
+    pub fn append_to_file(&self, path: &dyn AsRef<Path>) -> error_stack::Result<(), IoSerdeError> {
         let data = Data {
             users: vec![self.clone()],
         };
-        let data = toml::to_string(&data)?;
+        let data = toml::to_string(&data).change_context(IoSerdeError::Serialize)?;
 
         let mut file_options = File::options();
         file_options.append(true).create(true);
@@ -58,16 +59,23 @@ impl User {
             file_options.mode(0o600);
         }
 
-        let mut file = file_options.open(path)?;
+        let write_error = || IoSerdeError::Write(path.as_ref().to_path_buf());
 
-        let is_created = file.metadata()?.len() == 0;
+        let mut file = file_options.open(path).change_context_lazy(write_error)?;
+
+        let is_created = file
+            .metadata()
+            .change_context(IoSerdeError::Read(path.as_ref().to_path_buf()))?
+            .len()
+            == 0;
 
         if is_created {
-            file.write_all(data.as_bytes())?;
+            file.write_all(data.as_bytes())
+                .change_context_lazy(write_error)?;
         } else {
-            write!(file, "\n{}", data)?;
+            write!(file, "\n{}", data).change_context_lazy(write_error)?;
         }
-        file.flush()?;
+        file.flush().change_context_lazy(write_error)?;
 
         Ok(())
     }
@@ -79,9 +87,10 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn from_file(path: &dyn AsRef<Path>) -> Result<Self, IoSerdeError> {
-        let data_string = std::fs::read_to_string(path)?;
-        toml::from_str(&data_string).map_err(IoSerdeError::Deserialize)
+    pub fn from_file(path: &dyn AsRef<Path>) -> error_stack::Result<Self, IoSerdeError> {
+        let data_string = std::fs::read_to_string(path)
+            .change_context(IoSerdeError::Read(path.as_ref().to_path_buf()))?;
+        toml::from_str(&data_string).change_context(IoSerdeError::Deserialize)
     }
 
     pub fn get_by_name<'a>(&'a self, name: &str) -> Option<&'a User> {
@@ -91,10 +100,12 @@ impl Data {
 
 #[derive(Error, Debug)]
 pub enum IoSerdeError {
-    #[error(transparent)]
-    Read(#[from] std::io::Error),
-    #[error(transparent)]
-    Serialize(#[from] toml::ser::Error),
-    #[error(transparent)]
-    Deserialize(#[from] toml::de::Error),
+    #[error("Couldn't write to file '{}'", .0.display())]
+    Write(PathBuf),
+    #[error("Couldn't read from file '{}'", .0.display())]
+    Read(PathBuf),
+    #[error("Couldn't serialize structure")]
+    Serialize,
+    #[error("Couldn't deserialize file")]
+    Deserialize,
 }

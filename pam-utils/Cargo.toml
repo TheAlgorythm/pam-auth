@@ -9,7 +9,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pamsm = { version = "0.5.2", features = ["libpam"] }
+pamsm = { version = "0.5", features = ["libpam"] }
+error-stack = "0.4"
 
 [features]
 sandbox = []
