@@ -2,6 +2,7 @@ FROM rust:slim-bookworm as builder
 WORKDIR /usr/src/pam-auth
 RUN apt update && apt install -y libpam-dev && rm -rf /var/lib/apt/lists/*
 
+# Setup workspace with dependencies
 COPY Cargo.toml Cargo.lock .
 COPY pin-data/Cargo.toml pin-data/
 COPY pin-gen/Cargo.toml pin-gen/
@@ -9,19 +10,21 @@ COPY pam-utils/Cargo.toml pam-utils/
 COPY pam-pin/Cargo.toml pam-pin/
 COPY pam-direct-fallback/Cargo.toml pam-direct-fallback/
 
-
+# Setup workspace mock-members & build dependencies
 RUN mkdir pam-utils/src pam-pin/src pin-data/src pin-gen/src pam-direct-fallback/src \
-    && touch pam-utils/src/lib.rs pam-pin/src/lib.rs pin-data/src/lib.rs \
-      pin-gen/src/main.rs pam-direct-fallback/src/lib.rs \
-    && cargo fetch
+    && touch pam-utils/src/lib.rs pam-pin/src/lib.rs pin-data/src/lib.rs pam-direct-fallback/src/lib.rs \
+    && echo "fn main() {}" > pin-gen/src/main.rs \
+    && cargo build --release
 
+# Use actual workspace members & reset their creation time to after dependency build
 COPY pin-data pin-data
 COPY pin-gen pin-gen
 COPY pam-utils pam-utils
 COPY pam-pin pam-pin
 COPY pam-direct-fallback pam-direct-fallback
+RUN touch pam-utils/src/lib.rs pam-pin/src/lib.rs pin-data/src/lib.rs \
+      pin-gen/src/main.rs pam-direct-fallback/src/lib.rs
 
-# RUN cargo fetch
 RUN cargo build --release
 # RUN cargo build --release --no-default-features
 

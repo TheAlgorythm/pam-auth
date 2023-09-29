@@ -10,5 +10,4 @@ build-container:
 	podman build -t pam-auth-test:latest .
 
 container: build-container
-	podman build -t pam-auth-test:latest .
 	podman run -it --rm pam-auth-test:latest
