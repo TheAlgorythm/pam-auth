@@ -1,0 +1,216 @@
+[common]
+version = 2
+import_std = [
+    "fs",
+    "net",
+    "process",
+    "unix_sockets",
+]
+
+[sandbox]
+kind = "Disabled"
+
+[api.process]
+exclude = [
+    "std::process::ExitCode",
+    "std::process::ExitStatus",
+]
+
+[api.fs]
+include = [
+    "pin_data::User::append_to_file",
+    "pin_data::Data::from_file",
+]
+exclude = [
+    "std::path",
+]
+no_auto_detect = [
+    "landlock",
+]
+
+[api.libc]
+include = [
+    "libc",
+]
+
+[pkg.enumflags2_derive]
+allow_proc_macro = true
+allow_unsafe = true
+
+[pkg.thiserror-impl]
+allow_proc_macro = true
+
+[pkg.proc-macro-error-attr]
+allow_proc_macro = true
+
+[pkg.serde_derive]
+allow_proc_macro = true
+
+[pkg.clap_derive]
+allow_proc_macro = true
+
+[pkg.bitflags]
+allow_unsafe = true
+
+[pkg.pamsm]
+allow_unsafe = true
+
+[pkg.serde]
+from.build.allow_apis = [
+    "process",
+]
+allow_unsafe = true
+
+[pkg.thiserror]
+from.build.allow_apis = [
+    "fs",
+    "process",
+]
+
+[pkg.semver]
+from.build.allow_apis = [
+    "process",
+]
+allow_unsafe = true
+
+[pkg.syn]
+from.build.allow_apis = [
+    "process",
+]
+allow_unsafe = true
+
+[pkg.proc-macro2]
+from.build.allow_apis = [
+    "process",
+]
+allow_unsafe = true
+
+[pkg.libc]
+from.build.allow_apis = [
+    "process",
+]
+allow_unsafe = true
+
+[pkg.unicode-ident]
+allow_unsafe = true
+
+[pkg.cpufeatures]
+allow_unsafe = true
+
+[pkg.subtle]
+allow_unsafe = true
+
+[pkg.base64ct]
+allow_unsafe = true
+
+[pkg.hashbrown]
+allow_unsafe = true
+
+[pkg.version_check]
+from.build.allow_apis = [
+    "process",
+]
+
+[pkg.os_str_bytes]
+allow_unsafe = true
+
+[pkg.once_cell]
+allow_unsafe = true
+
+[pkg.typenum]
+from.build.allow_apis = [
+    "fs",
+]
+
+[pkg.autocfg]
+from.build.allow_apis = [
+    "fs",
+    "process",
+]
+
+[pkg.atty]
+allow_unsafe = true
+
+[pkg.getrandom]
+allow_unsafe = true
+
+[pkg.indexmap]
+allow_unsafe = true
+
+[pkg.rtoolbox]
+allow_unsafe = true
+allow_apis = [
+    "fs",
+]
+
+[pkg.rustc_version]
+from.build.allow_apis = [
+    "process",
+]
+
+[pkg.seccompiler]
+allow_unsafe = true
+
+[pkg.generic-array]
+allow_unsafe = true
+
+[pkg.winnow]
+allow_unsafe = true
+
+[pkg.rand_core]
+allow_unsafe = true
+
+[pkg.rpassword]
+allow_unsafe = true
+allow_apis = [
+    "fs",
+    "libc",
+]
+
+[pkg.error-stack]
+allow_unsafe = true
+
+[pkg.block-buffer]
+allow_unsafe = true
+
+[pkg.toml_edit]
+allow_unsafe = true
+
+[pkg.blake2]
+allow_unsafe = true
+
+[pkg.enumflags2]
+allow_unsafe = true
+
+[pkg.argon2]
+allow_unsafe = true
+
+[pkg.landlock]
+allow_unsafe = true
+allow_apis = [
+    "fs",
+]
+
+[pkg.birdcage]
+allow_apis = [
+    "fs",
+]
+
+[pkg.pin-data]
+
+[pkg.pam-direct-fallback]
+allow_apis = [
+    "fs",
+]
+
+[pkg.pam-pin]
+allow_apis = [
+    "fs",
+]
+
+[pkg.sysexits]
+
+[pkg.pin-gen]
+allow_apis = [
+    "fs",
+]
