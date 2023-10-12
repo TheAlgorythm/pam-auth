@@ -17,7 +17,7 @@ argon2 = { version = "0.5", features = ["std"] }
 rand_core = { version = "0.6", features = ["std"] }
 rpassword = "7.2"
 clap = { version = "3.2", features = ["derive"] }
-birdcage = { version = "0.3", optional = true }
+birdcage = { version = "0.4", optional = true }
 
 [features]
 default = ["sandbox"]

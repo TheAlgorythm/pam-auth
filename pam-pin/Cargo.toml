@@ -15,7 +15,7 @@ pin-data = { path = "../pin-data" }
 thiserror = "1"
 error-stack = "0.4"
 argon2 = { version = "0.5", features = ["std"] }
-birdcage = { version = "0.3", optional = true }
+birdcage = { version = "0.4", optional = true }
 
 [features]
 default = ["sandbox"]
