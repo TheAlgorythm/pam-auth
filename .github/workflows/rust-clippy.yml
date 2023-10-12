@@ -43,3 +43,7 @@ jobs:
           sarif_file: rust-clippy-results.sarif
           category: clippy-full
           wait-for-processing: true
+
+      - name: Run rust-clippy for check
+        run:
+          cargo clippy --all-features
