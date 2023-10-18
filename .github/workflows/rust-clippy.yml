@@ -11,6 +11,9 @@ jobs:
   rust-clippy-analyze:
     name: Run rust-clippy analyzing
     runs-on: ubuntu-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
     permissions:
       contents: read
       security-events: write
@@ -26,6 +29,8 @@ jobs:
           toolchain: stable
           components: clippy
           override: true
+      - name: Sccache Action
+        uses: Mozilla-Actions/sccache-action@v0.0.3
 
       - name: Install required cargo
         run: cargo install clippy-sarif sarif-fmt
