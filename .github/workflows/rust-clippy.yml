@@ -32,11 +32,20 @@ jobs:
           toolchain: stable
           components: clippy
           override: true
+
+      - name: Install clippy-sarif
+        uses: baptiste0928/cargo-install@v2.2.0
+        with:
+          crate: clippy-sarif
+
+      - name: Install sarif-fmt
+        uses: baptiste0928/cargo-install@v2.2.0
+        with:
+          crate: sarif-fmt
+        
       - name: Sccache Action
         uses: Mozilla-Actions/sccache-action@v0.0.3
 
-      - name: Install required cargo
-        run: cargo install clippy-sarif sarif-fmt
 
       - name: Run rust-clippy
         run:
