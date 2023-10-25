@@ -35,11 +35,15 @@ jobs:
 
       - name: Install clippy-sarif
         uses: baptiste0928/cargo-install@v2.2.0
+        env:
+          RUSTC_WRAPPER: ""
         with:
           crate: clippy-sarif
 
       - name: Install sarif-fmt
         uses: baptiste0928/cargo-install@v2.2.0
+        env:
+          RUSTC_WRAPPER: ""
         with:
           crate: sarif-fmt
         
