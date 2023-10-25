@@ -11,6 +11,8 @@ macro_rules! err_try {
     };
 }
 
+foo
+
 #[cfg(feature = "sandbox")]
 #[cfg(not(target_os = "linux"))]
 compile_error!(
