@@ -5,7 +5,7 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/"
     allow:
-      dependency-type: "all"
+      - dependency-type: "all"
     schedule:
       interval: "weekly"
   - package-ecosystem: "github-actions"
