@@ -8,7 +8,7 @@ use std::path::PathBuf;
 pub struct CliArgs {
     #[clap(short = 'f', long, default_value = "/etc/security/pins.toml")]
     pub database_filepath: PathBuf,
-    #[clap()]
+    #[clap(env = "SUDO_USER")]
     pub username: Option<String>,
     /// Use this flag to try different parameters.
     /// It disables the need for a username and pin.
