@@ -1,14 +1,19 @@
 use crate::{Error, Result};
-use clap::Parser;
+use clap::{Parser, ValueHint};
 use error_stack::ResultExt;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug, Clone)]
 #[clap(author, version, about)]
 pub struct CliArgs {
-    #[clap(short = 'f', long, default_value = "/etc/security/pins.toml")]
+    #[clap(
+        short = 'f',
+        long,
+        default_value = "/etc/security/pins.toml",
+        value_hint(ValueHint::FilePath)
+    )]
     pub database_filepath: PathBuf,
-    #[clap(env = "SUDO_USER")]
+    #[clap(env = "SUDO_USER", value_hint(ValueHint::Username))]
     pub username: Option<String>,
     /// Use this flag to try different parameters.
     /// It disables the need for a username and pin.
