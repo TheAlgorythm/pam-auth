@@ -2,13 +2,12 @@
 extern crate pamsm;
 
 mod args;
-mod path;
 
 use args::Args;
 use error_stack::{Report, ResultExt};
 use pam_utils::do_call_handler;
 use pamsm::{Pam, PamError, PamFlags, PamServiceModule};
-use path::{PathComponent, PushPathComponent};
+use path_ratchet::prelude::*;
 use std::fs::{remove_file, File};
 use std::path::PathBuf;
 
@@ -36,7 +35,7 @@ type Result<T> = error_stack::Result<T, Error>;
 
 fn user_file(dir: PathBuf, username: String) -> Result<PathBuf> {
     let mut user_data_file = dir;
-    let user_file_name = PathComponent::new(username).ok_or(Error::InvalidUsername)?;
+    let user_file_name = SinglePathComponent::new(username).ok_or(Error::InvalidUsername)?;
     user_data_file.push_component(user_file_name);
     Ok(user_data_file)
 }

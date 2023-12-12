@@ -11,7 +11,7 @@ jobs:
     name: cackle check and test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: cackle-rs/cackle-action@latest
       - name: Install libpam-dev
