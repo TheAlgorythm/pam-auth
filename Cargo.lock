@@ -347,9 +347,9 @@ dependencies = [
 
 [[package]]
 name = "path_ratchet"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3e077e7013f88392c128c2dbfbb95ac5acc5adec88ae15200a0a6455d9faa37"
+checksum = "e5df44fab00a854d616f5747fe00dd2f4ef13821588b8f3f5794ab8b83e7983f"
 
 [[package]]
 name = "pin-data"
