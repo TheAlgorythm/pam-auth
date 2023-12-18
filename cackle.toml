@@ -214,3 +214,6 @@ allow_apis = [
 allow_apis = [
     "fs",
 ]
+
+[pkg.path_ratchet]
+allow_unsafe = true
