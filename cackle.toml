@@ -209,6 +209,9 @@ allow_apis = [
 ]
 
 [pkg.sysexits]
+allow_apis = [
+    "process",
+]
 
 [pkg.pin-gen]
 allow_apis = [
