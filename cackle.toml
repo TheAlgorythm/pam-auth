@@ -67,6 +67,11 @@ from.build.allow_apis = [
     "process",
 ]
 
+[pkg.sysexits]
+from.build.allow_apis = [
+    "process",
+]
+
 [pkg.semver]
 from.build.allow_apis = [
     "process",
