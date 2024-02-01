@@ -48,7 +48,7 @@ jobs:
           crate: sarif-fmt
         
       - name: Sccache Action
-        uses: Mozilla-Actions/sccache-action@v0.0.3
+        uses: Mozilla-Actions/sccache-action@v0.0.4
 
 
       - name: Run rust-clippy
