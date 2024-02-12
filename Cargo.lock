@@ -327,9 +327,9 @@ dependencies = [
 
 [[package]]
 name = "pamsm"
-version = "0.5.3"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2835a92daeceb952dc846c442c4502583d26a773b031dd04c210cf0a3da599ef"
+checksum = "9ea09f4a90976643ac960f361b6e38c8bfdbcff68cefa792d976ca2cb53e4008"
 dependencies = [
  "bitflags",
 ]
