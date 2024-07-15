@@ -13,7 +13,7 @@ pamsm = { version = "0.5", features = ["libpam"] }
 pam-utils = { path = "../pam-utils" }
 pin-data = { path = "../pin-data" }
 thiserror = "1"
-error-stack = "0.4"
+error-stack = "0.5"
 argon2 = { version = "0.5", features = ["std"] }
 birdcage = { version = "0.3", optional = true }
 
