@@ -81,6 +81,7 @@ allow_unsafe = true
 
 [pkg.proc-macro2]
 from.build.allow_apis = [
+    "fs",
     "process",
 ]
 allow_unsafe = true
@@ -192,9 +193,6 @@ allow_apis = [
 ]
 
 [pkg.birdcage]
-allow_apis = [
-    "fs",
-]
 
 [pkg.pin-data]
 
@@ -209,9 +207,6 @@ allow_apis = [
 ]
 
 [pkg.sysexits]
-allow_apis = [
-    "process",
-]
 
 [pkg.pin-gen]
 allow_apis = [

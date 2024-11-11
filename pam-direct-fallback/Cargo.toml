@@ -12,7 +12,7 @@ edition = "2021"
 pamsm = { version = "0.5", features = ["libpam"] }
 pam-utils = { path = "../pam-utils" }
 path_ratchet = "~0.3"
-thiserror = "1"
+thiserror = "2"
 error-stack = "0.5"
 birdcage = { version = "0.3", optional = true }
 
