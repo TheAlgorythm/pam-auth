@@ -215,3 +215,13 @@ allow_apis = [
 
 [pkg.path_ratchet]
 allow_unsafe = true
+
+[pkg.zerocopy-derive]
+allow_proc_macro = true
+
+[pkg.zerocopy]
+build.allow_apis = [
+    "fs",
+    "process",
+]
+allow_unsafe = true
