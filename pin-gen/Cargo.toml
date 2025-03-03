@@ -12,7 +12,7 @@ edition = "2021"
 pin-data = { path = "../pin-data" }
 thiserror = "2"
 error-stack = "0.5"
-sysexits = "0.8"
+sysexits = "0.9"
 argon2 = { version = "0.5", features = ["std"] }
 rand_core = { version = "0.9", features = ["std"] }
 rpassword = "7.3"
