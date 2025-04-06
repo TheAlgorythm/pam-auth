@@ -56,7 +56,7 @@ jobs:
 
       - name: Run rust-clippy
         run:
-          cargo clippy
+          cargo clippy --locked
           --all-features
           --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
         continue-on-error: true
@@ -70,4 +70,8 @@ jobs:
 
       - name: Run rust-clippy for check
         run:
-          cargo clippy --all-features
+          cargo clippy --locked --all-features
+
+      - name: Format
+        run:
+          cargo fmt -- --check
