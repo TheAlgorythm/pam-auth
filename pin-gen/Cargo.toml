@@ -15,7 +15,7 @@ error-stack = "0.5"
 sysexits = "0.9"
 argon2 = { version = "0.5", features = ["std"] }
 rand_core = { version = "0.9", features = ["std"] }
-rpassword = "7.3"
+rpassword = "7.4"
 clap = { version = "3.2", features = ["derive", "env"] }
 birdcage = { version = "0.3", optional = true }
 
