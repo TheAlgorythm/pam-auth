@@ -12,7 +12,7 @@ Please use the recommendations of `pin-gen --help`.
 
 ## [PAM Direct Fallback](pam-direct-fallback)
 
-This module can be used to make PAM statefull.
+This module can be used to make PAM stateful.
 If you want to have an easy authentication path with e. g. pin, [Howdy](https://github.com/boltgolt/howdy) and a FIDO2 USB security key
 and a hard path with your password, then this will make sure that the easy path can only be triggered once.
 After a successful login the user-state will be resetted.
