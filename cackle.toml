@@ -174,9 +174,6 @@ allow_unsafe = true
 [pkg.block-buffer]
 allow_unsafe = true
 
-[pkg.toml_edit]
-allow_unsafe = true
-
 [pkg.blake2]
 allow_unsafe = true
 
@@ -216,12 +213,5 @@ allow_apis = [
 [pkg.path_ratchet]
 allow_unsafe = true
 
-[pkg.zerocopy-derive]
-allow_proc_macro = true
-
-[pkg.zerocopy]
-build.allow_apis = [
-    "fs",
-    "process",
-]
+[pkg.toml_parser]
 allow_unsafe = true
