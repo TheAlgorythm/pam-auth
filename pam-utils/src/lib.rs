@@ -41,7 +41,7 @@ where
 
         return error_context
             .downcast_ref::<PamError>()
-            .map(Clone::clone)
+            .cloned()
             .unwrap_or(PamError::AUTH_ERR);
     }
     PamError::SUCCESS
@@ -78,15 +78,15 @@ fn print_error<C>(
 {
     if !flags.contains(PamFlags::SILENT) {
         let error_message = if is_debug {
-            format!("Error: {:?}", error_context)
+            format!("Error: {error_context:?}")
         } else {
-            format!("Error: {}", error_context)
+            format!("Error: {error_context}")
         };
         let print_error = "Couldn't print error message";
         let input = pamh
             .conv(Some(&error_message), pamsm::PamMsgStyle::ERROR_MSG)
             .expect(print_error);
-        assert!(input.is_none(), "{} correctly", print_error);
+        assert!(input.is_none(), "{print_error} correctly");
     }
 }
 

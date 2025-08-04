@@ -73,7 +73,7 @@ impl User {
             file.write_all(data.as_bytes())
                 .change_context_lazy(write_error)?;
         } else {
-            write!(file, "\n{}", data).change_context_lazy(write_error)?;
+            write!(file, "\n{data}").change_context_lazy(write_error)?;
         }
         file.flush().change_context_lazy(write_error)?;
 

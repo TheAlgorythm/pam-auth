@@ -66,7 +66,7 @@ fn try_main() -> Result<()> {
 
 fn main() -> std::process::ExitCode {
     if let Err(report) = try_main() {
-        eprintln!("Error: {:?}", report);
+        eprintln!("Error: {report:?}");
 
         if let Some(exit_code) = report.downcast_ref::<ExitCode>() {
             return (*exit_code).into();
