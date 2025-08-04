@@ -70,7 +70,7 @@ jobs:
 
       - name: Run rust-clippy for check
         run:
-          cargo clippy --locked --all-features
+          cargo clippy --locked --all-features -- -D warnings
 
       - name: Format
         run:
