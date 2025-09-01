@@ -14,4 +14,4 @@ serde_derive = "1"
 toml = "0.9"
 argon2 = { version = "0.5", features = ["std"] }
 thiserror = "2"
-error-stack = "0.5"
+error-stack = "0.6"
