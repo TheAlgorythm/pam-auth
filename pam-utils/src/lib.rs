@@ -1,6 +1,8 @@
 use error_stack::ResultExt;
 use pamsm::{Pam, PamError, PamFlags, PamLibExt};
 
+type ResultReport<T, E> = Result<T, error_stack::Report<E>>;
+
 #[macro_export]
 macro_rules! err_try {
     ($res:expr) => {
@@ -25,8 +27,8 @@ pub fn do_call_handler<C, F>(
     sandbox_panic_error: C,
 ) -> PamError
 where
-    C: error_stack::Context,
-    F: Fn(&Pam, PamFlags, Vec<String>) -> error_stack::Result<(), C> + Send,
+    C: std::error::Error + Send + Sync + 'static,
+    F: Fn(&Pam, PamFlags, Vec<String>) -> ResultReport<(), C> + Send,
 {
     let is_debug = is_debug(&args);
 
@@ -54,10 +56,10 @@ fn do_threaded_call<C, F>(
     flags: PamFlags,
     args: Vec<String>,
     sandbox_panic_error: C,
-) -> error_stack::Result<(), C>
+) -> ResultReport<(), C>
 where
-    C: error_stack::Context,
-    F: Fn(&Pam, PamFlags, Vec<String>) -> error_stack::Result<(), C> + Send,
+    C: std::error::Error + Send + Sync + 'static,
+    F: Fn(&Pam, PamFlags, Vec<String>) -> ResultReport<(), C> + Send,
 {
     std::thread::scope(|scope| {
         let moving_handle = pamh.as_send_ref();
@@ -74,7 +76,7 @@ fn print_error<C>(
     flags: PamFlags,
     is_debug: bool,
 ) where
-    C: error_stack::Context,
+    C: std::error::Error,
 {
     if !flags.contains(PamFlags::SILENT) {
         let error_message = if is_debug {
@@ -102,15 +104,15 @@ pub fn is_debug(args: &[String]) -> bool {
     args.contains(&DEBUG_ID.to_string())
 }
 
-pub fn get_username<E: error_stack::Context + Clone>(
+pub fn get_username<E: std::error::Error + Send + Sync + Clone + 'static>(
     pamh: &Pam,
     pam_error: E,
     unknown_user_error: E,
-) -> error_stack::Result<String, E> {
+) -> ResultReport<String, E> {
     pamh.get_user(None)
-        .map_err(|pam_code| error_stack::Report::new(pam_error).attach(pam_code))?
+        .map_err(|pam_code| error_stack::Report::new(pam_error).attach_opaque(pam_code))?
         .ok_or(unknown_user_error.clone())
-        .attach(PamError::USER_UNKNOWN)?
+        .attach_opaque(PamError::USER_UNKNOWN)?
         .to_str()
         .map(ToString::to_string)
         .change_context(unknown_user_error)

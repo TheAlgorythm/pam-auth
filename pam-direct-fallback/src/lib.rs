@@ -31,7 +31,7 @@ enum Error {
     Reset,
 }
 
-type Result<T> = error_stack::Result<T, Error>;
+type Result<T> = std::result::Result<T, error_stack::Report<Error>>;
 
 fn user_file(dir: PathBuf, username: String) -> Result<PathBuf> {
     let mut user_data_file = dir;
@@ -44,7 +44,7 @@ struct PamDirectFallback;
 
 impl PamDirectFallback {
     fn start_session(pamh: &Pam, _flags: PamFlags, args: Vec<String>) -> Result<()> {
-        let args = Args::try_from(args).attach(PamError::IGNORE)?;
+        let args = Args::try_from(args).attach_opaque(PamError::IGNORE)?;
 
         #[cfg(feature = "sandbox")]
         Self::setup_sandbox(&args)?;
@@ -57,7 +57,7 @@ impl PamDirectFallback {
     }
 
     fn auth(pamh: &Pam, _flags: PamFlags, args: Vec<String>) -> Result<()> {
-        let args = Args::try_from(args).attach(PamError::IGNORE)?;
+        let args = Args::try_from(args).attach_opaque(PamError::IGNORE)?;
 
         #[cfg(feature = "sandbox")]
         Self::setup_sandbox(&args)?;
@@ -79,17 +79,17 @@ impl PamDirectFallback {
 
         let mut birdcage = Birdcage::new()
             .change_context(Error::Sandbox)
-            .attach_printable("Initialization failed")?;
+            .attach("Initialization failed")?;
 
         birdcage
             .add_exception(birdcage::Exception::Write(args.user_store.clone()))
             .change_context(Error::Sandbox)
-            .attach_printable("Couldn't set the user store as writeable")?;
+            .attach("Couldn't set the user store as writeable")?;
 
         birdcage
             .lock()
             .change_context(Error::Sandbox)
-            .attach_printable("Couldn't activate sandbox")
+            .attach("Couldn't activate sandbox")
     }
 
     fn set(user_data_file: PathBuf) -> Result<()> {
@@ -101,7 +101,7 @@ impl PamDirectFallback {
             .map_err(|e| match e.kind() {
                 std::io::ErrorKind::AlreadyExists => Report::new(e)
                     .change_context(Error::Auth)
-                    .attach(PamError::AUTH_ERR),
+                    .attach_opaque(PamError::AUTH_ERR),
                 _ => Report::new(e).change_context(Error::Auth),
             })
     }

@@ -45,7 +45,10 @@ impl User {
         self.pin_hash.password_hash()
     }
 
-    pub fn append_to_file(&self, path: &dyn AsRef<Path>) -> error_stack::Result<(), IoSerdeError> {
+    pub fn append_to_file(
+        &self,
+        path: &dyn AsRef<Path>,
+    ) -> Result<(), error_stack::Report<IoSerdeError>> {
         let data = Data {
             users: vec![self.clone()],
         };
@@ -87,7 +90,7 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn from_file(path: &dyn AsRef<Path>) -> error_stack::Result<Self, IoSerdeError> {
+    pub fn from_file(path: &dyn AsRef<Path>) -> Result<Self, error_stack::Report<IoSerdeError>> {
         let data_string = std::fs::read_to_string(path)
             .change_context(IoSerdeError::Read(path.as_ref().to_path_buf()))?;
         toml::from_str(&data_string).change_context(IoSerdeError::Deserialize)
