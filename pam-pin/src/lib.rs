@@ -29,7 +29,7 @@ enum Error {
     VerifyPassword,
 }
 
-type Result<T> = error_stack::Result<T, Error>;
+type Result<T> = std::result::Result<T, error_stack::Report<Error>>;
 
 struct PamPin;
 
@@ -40,24 +40,24 @@ impl PamPin {
 
         let mut birdcage = Birdcage::new()
             .change_context(Error::Sandbox)
-            .attach_printable("Initialization failed")?;
+            .attach("Initialization failed")?;
 
         birdcage
             .add_exception(birdcage::Exception::Read(args.database_filepath.clone()))
             .change_context(Error::Sandbox)
-            .attach_printable("Couldn't set the database file as readable")?;
+            .attach("Couldn't set the database file as readable")?;
 
         birdcage
             .lock()
             .change_context(Error::Sandbox)
-            .attach_printable("Couldn't activate sandbox")
+            .attach("Couldn't activate sandbox")
     }
 
     fn get_user_pin(pamh: &Pam) -> Result<&CStr> {
         pamh.conv(Some("Pin: "), pamsm::PamMsgStyle::PROMPT_ECHO_OFF)
-            .map_err(|pam_code| Report::new(Error::Pam).attach(pam_code))?
+            .map_err(|pam_code| Report::new(Error::Pam).attach_opaque(pam_code))?
             .ok_or(Error::ReadPassword)
-            .attach(PamError::AUTHTOK_RECOVERY_ERR)
+            .attach_opaque(PamError::AUTHTOK_RECOVERY_ERR)
     }
 
     fn verify_pin(hash: PasswordHash<'_>, pin: &[u8]) -> Result<()> {
@@ -66,7 +66,7 @@ impl PamPin {
     }
 
     fn auth(pamh: &Pam, _flags: PamFlags, args: Vec<String>) -> Result<()> {
-        let args = args::Args::try_from(args).attach(PamError::IGNORE)?;
+        let args = args::Args::try_from(args).attach_opaque(PamError::IGNORE)?;
 
         #[cfg(feature = "sandbox")]
         Self::setup_sandbox(&args)?;
@@ -77,7 +77,7 @@ impl PamPin {
         let user = users_data
             .get_by_name(&user_name)
             .ok_or(Error::UnknownUser)
-            .attach(PamError::USER_UNKNOWN)?;
+            .attach_opaque(PamError::USER_UNKNOWN)?;
 
         let pin = Self::get_user_pin(pamh)?;
 

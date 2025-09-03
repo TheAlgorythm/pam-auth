@@ -24,7 +24,7 @@ pub enum Error {
     WriteDatabase,
 }
 
-type Result<T> = error_stack::Result<T, Error>;
+type Result<T> = std::result::Result<T, error_stack::Report<Error>>;
 
 #[cfg(feature = "sandbox")]
 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
@@ -38,9 +38,9 @@ fn try_main() -> Result<()> {
     #[cfg(feature = "sandbox")]
     setup_sandbox(&args)?;
 
-    args.validate().attach(ExitCode::Usage)?;
+    args.validate().attach_opaque(ExitCode::Usage)?;
 
-    let argon2_params = args.argon2_params().attach(ExitCode::Usage)?;
+    let argon2_params = args.argon2_params().attach_opaque(ExitCode::Usage)?;
 
     let pin = if args.benchmark {
         "Pin".to_string()
@@ -86,7 +86,7 @@ fn setup_sandbox(args: &cli::CliArgs) -> Result<()> {
 
     let mut birdcage = Birdcage::new()
         .change_context(Error::Sandbox)
-        .attach_printable("Initialization failed")?;
+        .attach("Initialization failed")?;
 
     if !args.benchmark {
         // prompt_password
@@ -103,7 +103,7 @@ fn setup_sandbox(args: &cli::CliArgs) -> Result<()> {
             .database_filepath
             .parent()
             .ok_or(Error::Sandbox)
-            .attach_printable("Couldn't get the parent directory of the database")?
+            .attach("Couldn't get the parent directory of the database")?
             .to_path_buf();
         if database_parent.as_os_str().is_empty() {
             database_parent = ".".into();
@@ -111,13 +111,13 @@ fn setup_sandbox(args: &cli::CliArgs) -> Result<()> {
         birdcage
             .add_exception(birdcage::Exception::Write(database_parent))
             .change_context(Error::Sandbox)
-            .attach_printable("Couldn't set the database file as writeable")?;
+            .attach("Couldn't set the database file as writeable")?;
     }
 
     birdcage
         .lock()
         .change_context(Error::Sandbox)
-        .attach_printable("Couldn't activate sandbox")
+        .attach("Couldn't activate sandbox")
 }
 
 fn hash_pin(pin: String, argon2_params: Params) -> Result<PasswordHashString> {
