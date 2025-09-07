@@ -17,7 +17,7 @@ impl TryFrom<Vec<String>> for Args {
         let user_store = pam_utils::extract_named_value(&value, Self::USER_STORE_ID)
             .ok_or(crate::Error::MissingUserStoreArg)?
             .into();
-        let reset = value.contains(&Self::RESET_ID.to_string());
+        let reset = value.contains(&Self::RESET_ID.to_owned());
 
         Ok(Self { user_store, reset })
     }

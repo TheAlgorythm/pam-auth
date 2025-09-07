@@ -41,6 +41,7 @@ impl User {
         }
     }
 
+    #[must_use]
     pub fn pin_hash(&self) -> PasswordHash<'_> {
         self.pin_hash.password_hash()
     }
@@ -96,6 +97,7 @@ impl Data {
         toml::from_str(&data_string).change_context(IoSerdeError::Deserialize)
     }
 
+    #[must_use]
     pub fn get_by_name<'a>(&'a self, name: &str) -> Option<&'a User> {
         self.users.iter().rev().find(|user| user.name == name)
     }

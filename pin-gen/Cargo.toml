@@ -22,3 +22,6 @@ birdcage = { workspace = true, optional = true }
 [features]
 default = ["sandbox"]
 sandbox = ["dep:birdcage"]
+
+[lints]
+workspace = true

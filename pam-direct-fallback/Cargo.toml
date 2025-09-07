@@ -22,3 +22,6 @@ sandbox = ["dep:birdcage", "pam-utils/sandbox"]
 
 [lib]
 crate-type = ["cdylib"]
+
+[lints]
+workspace = true

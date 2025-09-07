@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 #[derive(Parser, Debug, Clone)]
 #[clap(author, version, about)]
-pub struct CliArgs {
+pub(crate) struct CliArgs {
     #[clap(
         short = 'f',
         long,
@@ -35,13 +35,13 @@ pub struct CliArgs {
 }
 
 impl CliArgs {
-    pub fn validate(&self) -> Result<()> {
+    pub(crate) fn validate(&self) -> Result<()> {
         (self.benchmark || self.username.is_some())
             .then_some(())
             .ok_or(Error::NoUsername.into())
     }
 
-    pub fn argon2_params(&self) -> Result<argon2::Params> {
+    pub(crate) fn argon2_params(&self) -> Result<argon2::Params> {
         let mut argon2_params = argon2::ParamsBuilder::new();
 
         if let Some(memory_cost) = self.memory_cost {

@@ -43,20 +43,25 @@ fn try_main() -> Result<()> {
     let argon2_params = args.argon2_params().attach_opaque(ExitCode::Usage)?;
 
     let pin = if args.benchmark {
-        "Pin".to_string()
+        "Pin".to_owned()
     } else {
         rpassword::prompt_password("Pin: ").change_context(Error::ReadPassword)?
     };
 
     let hashing_starting_time = Instant::now();
-    let hash = hash_pin(pin, argon2_params)?;
+    let hash = hash_pin(&pin, argon2_params)?;
     eprintln!(
         "Needed {}ms for hashing",
         hashing_starting_time.elapsed().as_millis()
     );
 
     if !args.benchmark {
-        let user = User::new(args.username.unwrap(), hash);
+        let user = User::new(
+            args.username
+                .ok_or(error_stack::Report::new(Error::NoUsername))
+                .attach_opaque(ExitCode::Usage)?,
+            hash,
+        );
 
         user.append_to_file(&args.database_filepath)
             .change_context(Error::WriteDatabase)?;
@@ -120,7 +125,7 @@ fn setup_sandbox(args: &cli::CliArgs) -> Result<()> {
         .attach("Couldn't activate sandbox")
 }
 
-fn hash_pin(pin: String, argon2_params: Params) -> Result<PasswordHashString> {
+fn hash_pin(pin: &str, argon2_params: Params) -> Result<PasswordHashString> {
     let argon2 = Argon2::new(Algorithm::Argon2d, Version::default(), argon2_params);
 
     let salt = SaltString::generate(&mut OsRng);
