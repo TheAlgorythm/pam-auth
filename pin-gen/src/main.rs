@@ -5,6 +5,7 @@ use clap::Parser;
 use error_stack::ResultExt;
 use password_hash::{rand_core::OsRng, PasswordHashString, PasswordHasher, SaltString};
 use pin_data::User;
+use secstr::SecStr;
 use std::time::Instant;
 use sysexits::ExitCode;
 
@@ -47,9 +48,13 @@ fn try_main() -> Result<()> {
     } else {
         rpassword::prompt_password("Pin: ").change_context(Error::ReadPassword)?
     };
+    let pin = SecStr::from(pin);
 
     let hashing_starting_time = Instant::now();
+
     let hash = hash_pin(&pin, argon2_params)?;
+    drop(pin);
+
     eprintln!(
         "Needed {}ms for hashing",
         hashing_starting_time.elapsed().as_millis()
@@ -125,13 +130,13 @@ fn setup_sandbox(args: &cli::CliArgs) -> Result<()> {
         .attach("Couldn't activate sandbox")
 }
 
-fn hash_pin(pin: &str, argon2_params: Params) -> Result<PasswordHashString> {
+fn hash_pin(pin: &SecStr, argon2_params: Params) -> Result<PasswordHashString> {
     let argon2 = Argon2::new(Algorithm::Argon2d, Version::default(), argon2_params);
 
     let salt = SaltString::generate(&mut OsRng);
 
     argon2
-        .hash_password(pin.as_bytes(), &salt)
+        .hash_password(pin.unsecure(), &salt)
         .map(|hash| hash.serialize())
         .change_context(Error::HashPassword)
 }

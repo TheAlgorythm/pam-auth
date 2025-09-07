@@ -386,6 +386,7 @@ dependencies = [
  "pin-data",
  "rand_core 0.9.3",
  "rpassword",
+ "secstr",
  "sysexits",
  "thiserror 2.0.16",
 ]
@@ -485,6 +486,15 @@ name = "seccompiler"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e01d1292a1131b22ccea49f30bd106f1238b5ddeec1a98d39268dcc31d540e68"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "secstr"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e04f657244f605c4cf38f6de5993e8bd050c8a303f86aeabff142d5c7c113e12"
 dependencies = [
  "libc",
 ]
