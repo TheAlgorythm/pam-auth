@@ -10,15 +10,18 @@ edition = "2021"
 
 [dependencies]
 pin-data = { path = "../pin-data" }
-thiserror = "2"
-error-stack = "0.6"
+thiserror.workspace = true
+error-stack.workspace = true
 sysexits = "0.9"
-argon2 = { version = "0.5", features = ["std"] }
+argon2.workspace = true
 rand_core = { version = "0.9", features = ["std"] }
 rpassword = "7.4"
 clap = { version = "3.2", features = ["derive", "env"] }
-birdcage = { version = "0.3", optional = true }
+birdcage = { workspace = true, optional = true }
 
 [features]
 default = ["sandbox"]
 sandbox = ["dep:birdcage"]
+
+[lints]
+workspace = true

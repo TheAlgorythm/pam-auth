@@ -43,7 +43,7 @@ where
 
         return error_context
             .downcast_ref::<PamError>()
-            .cloned()
+            .copied()
             .unwrap_or(PamError::AUTH_ERR);
     }
     PamError::SUCCESS
@@ -66,7 +66,7 @@ where
         let sandbox_thread = scope.spawn(move || handler(&moving_handle, flags, args));
         sandbox_thread
             .join()
-            .map_err(|_| error_stack::Report::new(sandbox_panic_error))
+            .map_err(|_thread_err| error_stack::Report::new(sandbox_panic_error))
     })?
 }
 
@@ -92,6 +92,7 @@ fn print_error<C>(
     }
 }
 
+#[must_use]
 pub fn extract_named_value<'a>(args: &'a [String], key: &str) -> Option<&'a str> {
     args.iter()
         .find(|arg| arg.starts_with(key))
@@ -100,8 +101,9 @@ pub fn extract_named_value<'a>(args: &'a [String], key: &str) -> Option<&'a str>
 
 const DEBUG_ID: &str = "debug";
 
+#[must_use]
 pub fn is_debug(args: &[String]) -> bool {
-    args.contains(&DEBUG_ID.to_string())
+    args.contains(&DEBUG_ID.to_owned())
 }
 
 pub fn get_username<E: std::error::Error + Send + Sync + Clone + 'static>(

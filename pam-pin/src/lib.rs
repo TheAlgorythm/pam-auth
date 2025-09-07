@@ -29,7 +29,7 @@ enum Error {
     VerifyPassword,
 }
 
-type Result<T> = std::result::Result<T, error_stack::Report<Error>>;
+type Result<T> = std::result::Result<T, Report<Error>>;
 
 struct PamPin;
 
@@ -60,7 +60,7 @@ impl PamPin {
             .attach_opaque(PamError::AUTHTOK_RECOVERY_ERR)
     }
 
-    fn verify_pin(hash: PasswordHash<'_>, pin: &[u8]) -> Result<()> {
+    fn verify_pin(hash: &PasswordHash<'_>, pin: &[u8]) -> Result<()> {
         hash.verify_password(&[&Argon2::default()], pin)
             .change_context(Error::VerifyPassword)
     }
@@ -81,7 +81,7 @@ impl PamPin {
 
         let pin = Self::get_user_pin(pamh)?;
 
-        Self::verify_pin(user.pin_hash(), pin.to_bytes())?;
+        Self::verify_pin(&user.pin_hash(), pin.to_bytes())?;
         Ok(())
     }
 }
@@ -104,7 +104,7 @@ mod test {
         let hash = "$argon2d$v=19$m=4096,t=3,p=1$PFRID+hbQKjEFESZWQZMEA$mMpICfZn5N0bV13RJ3nWYfYXesgTJcPl81xwrqzDDLY";
         let hash = PasswordHash::new(hash).unwrap();
 
-        PamPin::verify_pin(hash, pin.as_bytes()).unwrap();
+        PamPin::verify_pin(&hash, pin.as_bytes()).unwrap();
     }
 
     #[test]
@@ -119,6 +119,6 @@ mod test {
         let hash = "$argon2d$v=19$m=4096,t=3,p=1$PFRID+hbQKjEFESZWQZMEA$mMpICfZn5N0bV13RJ3nWYfYXesgTJcPl81xwrqzDDLY";
         let hash = PasswordHash::new(hash).unwrap();
 
-        let _ = PamPin::verify_pin(hash, pin.as_bytes()).unwrap_err();
+        let _ = PamPin::verify_pin(&hash, pin.as_bytes()).unwrap_err();
     }
 }

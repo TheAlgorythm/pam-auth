@@ -31,11 +31,11 @@ enum Error {
     Reset,
 }
 
-type Result<T> = std::result::Result<T, error_stack::Report<Error>>;
+type Result<T> = std::result::Result<T, Report<Error>>;
 
-fn user_file(dir: PathBuf, username: String) -> Result<PathBuf> {
+fn user_file(dir: PathBuf, username: &str) -> Result<PathBuf> {
     let mut user_data_file = dir;
-    let user_file_name = SingleComponentPath::new(&username).ok_or(Error::InvalidUsername)?;
+    let user_file_name = SingleComponentPath::new(username).ok_or(Error::InvalidUsername)?;
     user_data_file.push_component(user_file_name);
     Ok(user_data_file)
 }
@@ -51,7 +51,7 @@ impl PamDirectFallback {
 
         let username = pam_utils::get_username(pamh, Error::Pam, Error::UnknownUser)?;
 
-        let user_data_file = user_file(args.user_store, username)?;
+        let user_data_file = user_file(args.user_store, &username)?;
 
         Self::reset(user_data_file)
     }
@@ -64,7 +64,7 @@ impl PamDirectFallback {
 
         let username = pam_utils::get_username(pamh, Error::Pam, Error::UnknownUser)?;
 
-        let user_data_file = user_file(args.user_store, username)?;
+        let user_data_file = user_file(args.user_store, &username)?;
 
         if args.reset {
             Self::reset(user_data_file)
@@ -74,7 +74,7 @@ impl PamDirectFallback {
     }
 
     #[cfg(feature = "sandbox")]
-    fn setup_sandbox(args: &args::Args) -> Result<()> {
+    fn setup_sandbox(args: &Args) -> Result<()> {
         use birdcage::{Birdcage, Sandbox};
 
         let mut birdcage = Birdcage::new()

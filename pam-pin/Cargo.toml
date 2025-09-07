@@ -9,13 +9,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pamsm = { version = "0.5", features = ["libpam"] }
+pamsm.workspace = true
 pam-utils = { path = "../pam-utils" }
 pin-data = { path = "../pin-data" }
-thiserror = "2"
-error-stack = "0.6"
-argon2 = { version = "0.5", features = ["std"] }
-birdcage = { version = "0.3", optional = true }
+thiserror.workspace = true
+error-stack.workspace = true
+argon2.workspace = true
+birdcage = { workspace = true, optional = true }
 
 [features]
 default = ["sandbox"]
@@ -23,3 +23,6 @@ sandbox = ["dep:birdcage", "pam-utils/sandbox"]
 
 [lib]
 crate-type = ["cdylib"]
+
+[lints]
+workspace = true

@@ -12,6 +12,9 @@ edition = "2021"
 serde = "1"
 serde_derive = "1"
 toml = "0.9"
-argon2 = { version = "0.5", features = ["std"] }
-thiserror = "2"
-error-stack = "0.6"
+argon2.workspace = true
+thiserror.workspace = true
+error-stack.workspace = true
+
+[lints]
+workspace = true
