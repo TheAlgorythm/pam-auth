@@ -326,6 +326,7 @@ dependencies = [
  "pam-utils",
  "pamsm",
  "pin-data",
+ "secstr",
  "thiserror 2.0.16",
 ]
 
