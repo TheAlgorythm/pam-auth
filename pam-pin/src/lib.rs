@@ -7,7 +7,7 @@ use argon2::{password_hash, Argon2};
 use error_stack::{Report, ResultExt};
 use pamsm::{Pam, PamError, PamFlags, PamLibExt, PamServiceModule};
 use password_hash::PasswordHash;
-use std::ffi::CStr;
+use secstr::SecStr;
 
 #[derive(thiserror::Error, Debug, Clone)]
 enum Error {
@@ -53,15 +53,16 @@ impl PamPin {
             .attach("Couldn't activate sandbox")
     }
 
-    fn get_user_pin(pamh: &Pam) -> Result<&CStr> {
+    fn get_user_pin(pamh: &Pam) -> Result<SecStr> {
         pamh.conv(Some("Pin: "), pamsm::PamMsgStyle::PROMPT_ECHO_OFF)
             .map_err(|pam_code| Report::new(Error::Pam).attach_opaque(pam_code))?
+            .map(|pin| SecStr::from(pin.to_bytes()))
             .ok_or(Error::ReadPassword)
             .attach_opaque(PamError::AUTHTOK_RECOVERY_ERR)
     }
 
-    fn verify_pin(hash: &PasswordHash<'_>, pin: &[u8]) -> Result<()> {
-        hash.verify_password(&[&Argon2::default()], pin)
+    fn verify_pin(hash: &PasswordHash<'_>, pin: &SecStr) -> Result<()> {
+        hash.verify_password(&[&Argon2::default()], pin.unsecure())
             .change_context(Error::VerifyPassword)
     }
 
@@ -81,7 +82,8 @@ impl PamPin {
 
         let pin = Self::get_user_pin(pamh)?;
 
-        Self::verify_pin(&user.pin_hash(), pin.to_bytes())?;
+        Self::verify_pin(&user.pin_hash(), &pin)?;
+        drop(pin);
         Ok(())
     }
 }
@@ -100,11 +102,11 @@ mod test {
 
     #[test]
     fn verify_valid_pin() {
-        let pin = "pw";
+        let pin = SecStr::from("pw");
         let hash = "$argon2d$v=19$m=4096,t=3,p=1$PFRID+hbQKjEFESZWQZMEA$mMpICfZn5N0bV13RJ3nWYfYXesgTJcPl81xwrqzDDLY";
         let hash = PasswordHash::new(hash).unwrap();
 
-        PamPin::verify_pin(&hash, pin.as_bytes()).unwrap();
+        PamPin::verify_pin(&hash, &pin).unwrap();
     }
 
     #[test]
@@ -115,10 +117,10 @@ mod test {
 
     #[test]
     fn not_verify_invalid_pin() {
-        let pin = "Pw";
+        let pin = SecStr::from("Pw");
         let hash = "$argon2d$v=19$m=4096,t=3,p=1$PFRID+hbQKjEFESZWQZMEA$mMpICfZn5N0bV13RJ3nWYfYXesgTJcPl81xwrqzDDLY";
         let hash = PasswordHash::new(hash).unwrap();
 
-        let _ = PamPin::verify_pin(&hash, pin.as_bytes()).unwrap_err();
+        let _ = PamPin::verify_pin(&hash, &pin).unwrap_err();
     }
 }

@@ -14,6 +14,7 @@ pam-utils = { path = "../pam-utils" }
 pin-data = { path = "../pin-data" }
 thiserror.workspace = true
 error-stack.workspace = true
+secstr.workspace = true
 argon2.workspace = true
 birdcage = { workspace = true, optional = true }
 
