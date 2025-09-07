@@ -8,3 +8,10 @@ members = [
   "pin-data",
   "pam-direct-fallback",
 ]
+
+[workspace.dependencies]
+pamsm = { version = "0.5", features = ["libpam"] }
+thiserror = "2"
+error-stack = "0.6"
+argon2 = { version = "0.5", features = ["std"] }
+birdcage = "0.3"

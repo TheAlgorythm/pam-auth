@@ -9,12 +9,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pamsm = { version = "0.5", features = ["libpam"] }
+pamsm.workspace = true
 pam-utils = { path = "../pam-utils" }
 path_ratchet = "~0.3"
-thiserror = "2"
-error-stack = "0.6"
-birdcage = { version = "0.3", optional = true }
+thiserror.workspace = true
+error-stack.workspace = true
+birdcage = { workspace = true, optional = true }
 
 [features]
 default = ["sandbox"]
