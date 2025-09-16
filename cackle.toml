@@ -68,9 +68,6 @@ from.build.allow_apis = [
 ]
 
 [pkg.semver]
-from.build.allow_apis = [
-    "process",
-]
 allow_unsafe = true
 
 [pkg.syn]
@@ -217,4 +214,10 @@ allow_unsafe = true
 allow_unsafe = true
 
 [pkg.secstr]
+allow_unsafe = true
+
+[pkg.serde_core]
+build.allow_apis = [
+    "process",
+]
 allow_unsafe = true
