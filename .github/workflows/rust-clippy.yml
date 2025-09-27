@@ -33,7 +33,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-          components: clippy
+          components: rustfmt, clippy
           override: true
 
       - name: Install clippy-sarif
