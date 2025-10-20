@@ -17,7 +17,7 @@ argon2.workspace = true
 rand_core = { version = "0.9", features = ["std"] }
 rpassword = "7.4"
 secstr.workspace = true
-clap = { version = "3.2", features = ["derive", "env"] }
+clap = { version = "4.5", features = ["derive", "env"] }
 birdcage = { workspace = true, optional = true }
 
 [features]
