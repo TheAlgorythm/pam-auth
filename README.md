@@ -1,5 +1,8 @@
 # [WiP] PAM Modules written in Rust
 
+![GPL 3.0 License Badge](https://img.shields.io/badge/LICENSE-GPL--3.0--ONLY-blue?style=for-the-badge&logo=open-source-initiative&cacheSeconds=43600)
+![No AI Badge](https://img.shields.io/badge/No-AI-orange?style=for-the-badge&cacheSeconds=43600)
+
 ## [PAM Pin](pam-pin)
 
 A module for using pins different from `/etc/shadow`.
