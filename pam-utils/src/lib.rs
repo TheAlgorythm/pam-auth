@@ -116,7 +116,7 @@ pub fn get_username<E: std::error::Error + Send + Sync + Clone + 'static>(
         .ok_or(unknown_user_error.clone())
         .attach_opaque(PamError::USER_UNKNOWN)?
         .to_str()
-        .map(ToString::to_string)
+        .map(str::to_owned)
         .change_context(unknown_user_error)
 }
 
