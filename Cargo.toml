@@ -12,7 +12,7 @@ members = [
 [workspace.dependencies]
 pamsm = { version = "0.5", features = ["libpam"] }
 thiserror = "2"
-error-stack = "0.6"
+error-stack = "0.7"
 argon2 = { version = "0.5", features = ["std"] }
 birdcage = "0.3"
 secstr ="0.5"
